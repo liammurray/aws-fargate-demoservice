@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    // Base directory to resolve non-absolute module names
+    "baseUrl": "src",
+    // "incremental": true
+    // Generates corresponding '.d.ts' file
+    "declaration": true,
+    // Implies allowSyntheticDefaultImports: true
+    "esModuleInterop": true,
+    "lib": ["es6", "esnext.asynciterable"],
+    "module": "commonjs",
+    "types": ["node", "mocha"],
+    // Raise error on expressions and declarations with an implied 'any' type.
+    "noImplicitAny": false,
+    // Redirect output structure to the directory
+    "outDir": "dist",
+    // Lookup locations relative to the 'baseUrl'
+    // Makes vscode happy but you still need a module resolver (babel) for complilation.
+    // "paths": {
+    //   "~/*": ["*"]
+    // },
+    "sourceMap": true,
+    "strict": true,
+    "target": "esnext"
+  },
+  "include": ["src/**/*"]
+}
