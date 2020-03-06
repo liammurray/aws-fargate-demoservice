@@ -16,9 +16,9 @@
     "outDir": "dist",
     // Lookup locations relative to the 'baseUrl'
     // Makes vscode happy but you still need a module resolver (babel) for complilation.
-    // "paths": {
-    //   "~/*": ["*"]
-    // },
+    "paths": {
+      "~/*": ["*"]
+    },
     "sourceMap": true,
     "strict": true,
     "target": "esnext"
