@@ -9,7 +9,7 @@
     "audit-resolver": "resolve-audit",
     "build": "npm run build:clean && npm run build:dist",
     "build:clean": "rimraf dist",
-    "build:dist": "tsc",
+    "build:dist": "ttsc",
     "lambda": "rimraf lambda && (cp -r dist lambda && cp package*.json ./lambda) && (cd ./lambda && npm ci --production)",
     "format": "npm run format:prettier",
     "format:prettier": "prettier --write '**/*.{ts,js,md,json}'",
@@ -20,7 +20,7 @@
     "lint:eslint": "eslint --cache --ext .ts ./",
     "start:debug": "nodemon --inspect=5858 -r ./src/server.ts",
     "start:watch": "nodemon ./src/server.ts",
-    "type-check": "tsc --noEmit",
+    "type-check": "ttsc --noEmit",
     "type-check:watch": "npm run type-check -- --watch"
   },
   "_moduleAliases": {
@@ -34,7 +34,6 @@
     "express": "^4.17.1",
     "got": "^10.6.0",
     "http-status-codes": "^1.4.0",
-    "module-alias": "^2.2.2",
     "pino": "^5.17.0",
     "uuid": "^7.0.2"
   },
@@ -67,8 +66,10 @@
     "source-map-support": "^0.5.16",
     "ts-mocha": "^6.0.0",
     "ts-node": "^8.4.1",
+    "ttypescript": "^1.5.10",
     "typescript": "^3.7.2",
-    "typescript-eslint": "0.0.1-alpha.0"
+    "typescript-eslint": "0.0.1-alpha.0",
+    "typescript-transform-paths": "^1.1.14"
   },
   "repository": {
     "type": "git",

@@ -19,6 +19,11 @@
     "paths": {
       "~/*": ["*"]
     },
+    // ttypescript
+    "plugins": [
+      { "transform": "typescript-transform-paths" },
+      { "transform": "typescript-transform-paths", "afterDeclarations": true }
+    ],
     "sourceMap": true,
     "strict": true,
     "target": "esnext"

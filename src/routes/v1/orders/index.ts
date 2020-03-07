@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express'
 import HttpStatus from 'http-status-codes'
-import { getLogger } from '../../../globals'
+import { getLogger } from '~/globals'
 
 export const router = Router()
 

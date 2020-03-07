@@ -16,6 +16,7 @@ PACKAGE := .package/$(shell node -p 'const p=require("./package.json"); `$${p.na
 	build \
 	package \
   utest \
+  debug \
 	clean
 
 build: dist
@@ -34,6 +35,9 @@ utest: node_modules
 
 node_modules: package.json
 	npm i && touch node_modules
+
+develop: node_modules
+	npm run start:watch | pino-pretty
 
 dist: $(source_files) node_modules
 	npm run build

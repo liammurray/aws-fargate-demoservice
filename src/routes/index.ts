@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express'
 
 import { router as orders } from './v1/orders'
-import { getLogger } from '../globals'
+import { getLogger } from '~/globals'
 
 export const v1 = Router()
 
