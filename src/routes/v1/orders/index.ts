@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express'
 import HttpStatus from 'http-status-codes'
-import { getLogger } from '~/globals'
+import ctx from '~/globals'
 
 export const router = Router()
 
@@ -13,7 +13,7 @@ function getOrders(req: Request, res: Response): void {
 }
 
 function getOrderById(req: Request, res: Response): void {
-  getLogger().info('getOrderById', req.params)
+  ctx.logger.info('getOrderById', req.params)
   const idx = parseInt(req.params.id)
   if (idx >= 0 && idx < orders.length) {
     res.status(HttpStatus.OK).json({

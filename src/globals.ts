@@ -1,6 +1,6 @@
 import pino, { Logger } from 'pino'
 import dotenv from 'dotenv'
-import { createNamespace } from 'cls-hooked'
+import { createNamespace, Namespace } from 'cls-hooked'
 import CorrelationIds from './correlationIds'
 import { envStr } from './util'
 
@@ -12,20 +12,37 @@ export const logger = pino({
   name: envStr('SERVICE_NAME'),
 })
 
-const ns = createNamespace('myApp')
-
-export function getNamespace(): typeof ns {
-  return ns
-}
-
 export function getRootLogger(): Logger {
   return logger
 }
 
-export function getLogger(): Logger {
-  return ns.get('logger') as Logger
+class Context {
+  private readonly ns: Namespace
+  constructor(name = 'myapp') {
+    this.ns = createNamespace(name)
+  }
+
+  set logger(logger: Logger) {
+    this.ns.set('logger', logger)
+  }
+
+  get logger(): Logger {
+    return this.ns.get('logger') as Logger
+  }
+
+  set correlationIds(cids: CorrelationIds) {
+    this.ns.set('correlationIds', cids)
+  }
+
+  get correlationIds(): CorrelationIds {
+    return this.ns.get('correlationIds') as CorrelationIds
+  }
+
+  get namespace(): Namespace {
+    return this.ns
+  }
 }
 
-export function getCorrelationIds(): CorrelationIds {
-  return ns.get('correlationIds') as CorrelationIds
-}
+const ctx = new Context()
+
+export default ctx

@@ -3,28 +3,30 @@ import { v4 as uuid } from 'uuid'
 import CorrelationIds from './correlationIds'
 import { envPort } from './util'
 import { v1 } from './routes'
-import { getRootLogger, getNamespace } from './globals'
+import ctx, { getRootLogger } from './globals'
 import bodyParser from 'body-parser'
 
 function initClsMiddleware(req: Request, res: Response, next): void {
-  const ns = getNamespace()
+  const ns = ctx.namespace
   ns.run(() => {
+    ns.bindEmitter(req)
+    ns.bindEmitter(res)
+
     const ids = new CorrelationIds()
     ids.put('default', uuid())
-    ns.set('correlationIds', ids)
+    ctx.correlationIds = ids
 
     const context = {
       'x-request-id': uuid(),
       ...ids.get(),
     }
-    const child = getRootLogger().child(context)
-    ns.set('logger', child)
+    ctx.logger = getRootLogger().child(context)
 
     next()
   })
 }
 
-function setDefaultHeadersMiddleware(req: Request, res: Response, next) {
+function setDefaultHeadersMiddleware(req: Request, res: Response, next): void {
   res.set('Access-Control-Allow-Origin', '*')
   res.set('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
   res.set('Cache-Control', 'no-store')
@@ -32,10 +34,9 @@ function setDefaultHeadersMiddleware(req: Request, res: Response, next) {
   res.set('X-XSS-Protection', '1; mode=block')
   res.set('Access-Control-Allow-Headers', 'Content-type,Accept,X-Real-IP,Authorization')
   if (req.method === 'OPTIONS') {
-    res.status(200).end()
-  } else {
-    next()
+    return res.status(200).end()
   }
+  next()
 }
 
 const app = express()

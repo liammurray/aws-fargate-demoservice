@@ -16,10 +16,10 @@ PACKAGE := .package/$(shell node -p 'const p=require("./package.json"); `$${p.na
 	build \
 	package \
   utest \
-  debug \
+  develop \
 	clean
 
-build: dist
+build: $(build_files)
 
 lambda: build
 	npm run lambda
@@ -39,7 +39,7 @@ node_modules: package.json
 develop: node_modules
 	npm run start:watch | pino-pretty
 
-dist: $(source_files) node_modules
+$(build_files): $(source_files) node_modules tsconfig.json
 	npm run build
 
 $(PACKAGE): $(build_files)
