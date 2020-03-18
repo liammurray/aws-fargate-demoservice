@@ -1,10 +1,11 @@
-import express, { Request, Response } from 'express'
+import express, { Request, Response, NextFunction } from 'express'
 import { v4 as uuid } from 'uuid'
 import CorrelationIds from './correlationIds'
 import { envPort } from './util'
 import { v1 } from './routes'
 import ctx, { getRootLogger } from './globals'
 import bodyParser from 'body-parser'
+import HttpStatus from 'http-status-codes'
 
 function initClsMiddleware(req: Request, res: Response, next): void {
   const ns = ctx.namespace
@@ -47,5 +48,16 @@ app.use(setDefaultHeadersMiddleware)
 app.use(bodyParser.json())
 
 app.use('/v1', v1)
+
+/**
+ * Catch unhandled errors and return JSON with default 500
+ */
+app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
+  ctx.logger.warn({
+    message: err?.message || 'error',
+    stack: err?.stack || 'no stack',
+  })
+  res.status(err.status || err.statusCode || HttpStatus.INTERNAL_SERVER_ERROR).end()
+})
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))

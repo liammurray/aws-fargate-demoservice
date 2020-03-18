@@ -22,17 +22,23 @@ rules:
     - single
     - allowTemplateLiterals: true
       avoidEscape: true
+  '@typescript-eslint/no-unused-vars':
+    - warn
+    - vars: all
+      args: after-used
+      ignoreRestSiblings: true
+      argsIgnorePattern: ^_
   semi:
     - error
     - never
   '@typescript-eslint/member-delimiter-style':
     - error
     - multiline:
-        delimiter: comma
+        delimiter: none
         requireLast: false
       singleline:
         delimiter: comma
-        requireLast: false
+        requireLast: true
   '@typescript-eslint/no-this-alias':
     - error
     - allowDestructuring: true
