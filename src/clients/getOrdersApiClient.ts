@@ -1,9 +1,9 @@
 import axios, { AxiosBasicCredentials, AxiosRequestConfig } from 'axios'
 import * as OrdersApi from '@nod15c/orders-client-axios'
-import { createSSM, getSecureParam } from '~/awsUtil'
+import { createSSM, getSecureParam } from '~/util/awsUtil'
 import querystring from 'querystring'
 import ctx from '~/globals'
-import { envStr } from '~/util'
+import { envStr } from '~/util/env'
 
 // https://github.com/OpenAPITools/openapi-generator/tree/master/samples/openapi3/client/petstore/javascript-es6
 

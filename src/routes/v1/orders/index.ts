@@ -1,12 +1,12 @@
 import { Router, Request, Response } from 'express'
 import HttpStatus from 'http-status-codes'
-import ctx, { logger } from '~/globals'
+import ctx from '~/globals'
 
 import { ListOrdersResponse } from '@nod15c/orders-client-axios'
 
-import getOrdersApiClient from '~/getOrdersApiClient'
+import getOrdersApiClient from '~/clients/getOrdersApiClient'
 
-import catchExceptions from '~/catchExceptions'
+import catchExceptions from '~/util/catchExceptions'
 
 export const router = Router()
 

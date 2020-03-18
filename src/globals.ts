@@ -1,8 +1,8 @@
 import pino, { Logger } from 'pino'
 import dotenv from 'dotenv'
 import { createNamespace, Namespace } from 'cls-hooked'
-import CorrelationIds from './correlationIds'
-import { envStr } from './util'
+import CorrelationIds from './instrumentation/correlationIds'
+import { envStr } from './util/env'
 
 dotenv.config()
 

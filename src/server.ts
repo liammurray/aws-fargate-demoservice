@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express'
 import { v4 as uuid } from 'uuid'
-import CorrelationIds from './correlationIds'
-import { envPort } from './util'
+import CorrelationIds from './instrumentation/correlationIds'
+import { envPort } from './util/env'
 import { v1 } from './routes'
 import ctx, { getRootLogger } from './globals'
 import bodyParser from 'body-parser'
@@ -52,7 +52,8 @@ app.use('/v1', v1)
 /**
  * Catch unhandled errors and return JSON with default 500
  */
-app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   ctx.logger.warn({
     message: err?.message || 'error',
     stack: err?.stack || 'no stack',
