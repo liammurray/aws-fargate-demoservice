@@ -1,3 +1,6 @@
+export type IdMap = {
+  [key: string]: string
+}
 export default class CorrelationIds {
   constructor(private readonly ids = {}, private readonly prefix: string = 'x-correlation-id-') {}
 
@@ -9,7 +12,7 @@ export default class CorrelationIds {
     this.ids[this.withPrefix(name)] = val
   }
 
-  get(): { [key: string]: string } {
+  get(): IdMap {
     return this.ids
   }
 }
