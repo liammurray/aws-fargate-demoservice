@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import Timer from '../../src/util/timer'
+import Timer from '~/util/timer'
 
 describe('Timer', function() {
   it('should produce millisecs', function() {
