@@ -36,6 +36,30 @@ async function getOrders(_req: Request, res: Response): Promise<void> {
   }
 }
 
+async function deleteOrderById(req: Request, res: Response): Promise<void> {
+  ctx.logger.info('deleteOrderById', req.params)
+
+  const client = await getOrdersApiClient()
+
+  const result = await client.deleteOrderById(req.params.id, AXIOS_OPTS)
+
+  switch (result.status) {
+    case HttpStatus.NOT_FOUND:
+    case HttpStatus.OK:
+      res.status(result.status)
+      if (result.data) {
+        res.json(result.data)
+      } else {
+        res.end()
+      }
+      break
+    default:
+      res.status(HttpStatus.BAD_REQUEST).json({
+        error: `Unexpected ${result.status} response from backend service`,
+      })
+  }
+}
+
 async function getOrderById(req: Request, res: Response): Promise<void> {
   ctx.logger.info('getOrderById', req.params)
 
@@ -63,3 +87,5 @@ async function getOrderById(req: Request, res: Response): Promise<void> {
 router.get('/', catchExceptions(getOrders))
 
 router.get('/:id', catchExceptions(getOrderById))
+
+router.delete('/:id', catchExceptions(deleteOrderById))
