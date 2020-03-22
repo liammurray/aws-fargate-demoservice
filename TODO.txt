@@ -1,0 +1,14 @@
+
+- make demoservice-test docker work
+  - npm run test doesn't work because it runs ts-node pointing to test source (not dist)
+
+- make run as docker work
+  - ENV or volume for .aws
+     https://aws.amazon.com/blogs/compute/a-guide-to-locally-testing-containers-with-amazon-ecs-local-endpoints-and-docker-compose/
+
+- make infra work (ecs launch)
+
+- x-ray and http
+
+- auth endpoint from client
+
