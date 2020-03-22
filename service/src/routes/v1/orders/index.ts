@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express'
 import HttpStatus from 'http-status-codes'
 import ctx from '~/globals'
 
-import { ListOrdersResponse } from '@nod15c/orders-client-axios'
+import { ListOrdersResponse } from '@liammurray/orders-client-axios'
 
 import getOrdersApiClient from '~/clients/getOrdersApiClient'
 

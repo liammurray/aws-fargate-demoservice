@@ -1,5 +1,5 @@
 import axios, { AxiosBasicCredentials, AxiosRequestConfig } from 'axios'
-import * as OrdersApi from '@nod15c/orders-client-axios'
+import * as OrdersApi from '@liammurray/orders-client-axios'
 import { createSSM, getSecureParam } from '~/util/awsUtil'
 import querystring from 'querystring'
 import ctx from '~/globals'

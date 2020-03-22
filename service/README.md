@@ -14,13 +14,17 @@ Simple test express server:
 
    Ensure an SSM parameter for "FullUser" exists as a secure string parameter. It should be in the format `<clientid>:<secret>` under `/api/clientcreds/FullUser`.
 
-1. For now use `npm link` to link the local orders api client (generated in the orders api service project):
+1. Configure npm
+
+   You should set GITHUB_PERSONAL_PACKAGE_TOKEN to access @liammurray (see .npmrc)
+
+1. For development while actively making changes to client use `npm link` to link the local orders api client (generated in the orders api service project):
 
    ```bash
    npm link /path/to/ordersService/generated/orders-client-axios
    ```
 
-   This links: @nod15c/orders-client-axios
+   This links: @liammurrayc/orders-client-axios
 
 1. Ensure values in .env are correct (particularly OAuth2 endpoint)
 
