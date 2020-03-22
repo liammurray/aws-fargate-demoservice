@@ -34,6 +34,7 @@
     "express": "^4.17.1",
     "got": "^10.6.0",
     "http-status-codes": "^1.4.0",
+    "lodash": "^4.17.15",
     "mongodb": "^3.5.5",
     "mongoose": "^5.9.5",
     "pino": "^5.17.0",
