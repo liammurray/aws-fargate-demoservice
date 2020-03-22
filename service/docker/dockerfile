@@ -1,0 +1,182 @@
+ARG NODE_VERSION=10.17
+ARG SERVICE_NAME=demoservice
+ARG USER_NAME=demoservice
+ARG SERVICE_PORT=3005
+
+######################################################
+# Stage: server code
+#
+# Contains everything needed to build and run tests
+# Installs pacakages (node_modules)
+#
+######################################################
+
+FROM node:${NODE_VERSION}-alpine as code
+
+ARG SERVICE_NAME
+ARG USER_NAME
+ARG SERVICE_PORT
+
+# Install some extra tools needed for building (TODO: pin versions)
+RUN apk update \
+  && apk add bash make gcc g++ python rsync \
+  ;
+
+WORKDIR /usr/src/${SERVICE_NAME}
+
+# Copy code and build files (ingore everything in .dockerignore)
+# COPY package.json package-lock.json audit-resolv.json .env .prettier* .mocha* .eslint* tsconfig.json .npmrc ./
+COPY . .
+
+# Run npm install and audit before adding source (so source-only change doesn't bust image cache)
+ARG GITHUB_PERSONAL_PACKAGE_TOKEN
+RUN npm ci \
+  && npm run audit-checker \
+  && rm -f .npmrc \
+  ;
+
+
+######################################################
+# Stage: server dist builder
+#
+# Code with build dist (production dependencies only)
+#
+######################################################
+FROM code as dist-builder
+
+# Compile code
+RUN npm run build \
+  && npm prune --production \
+  ;
+
+######################################################
+# Stage: server dist
+#
+# Contains src code only (no test code)
+#
+######################################################
+
+# Start from barebones node and copy dist code from dist-builder
+FROM node:${NODE_VERSION}-alpine as dist
+
+ARG SERVICE_NAME
+ARG USER_NAME
+ARG SERVICE_PORT
+
+# Copy server code and modules
+WORKDIR /usr/src/${SERVICE_NAME}
+# usr/src/<service/dist/src a bit weird but makes package.json happy
+COPY --from=dist-builder /usr/src/${SERVICE_NAME}/dist/src ./dist/src
+COPY --from=dist-builder /usr/src/${SERVICE_NAME}/node_modules ./node_modules
+COPY --from=dist-builder /usr/src/${SERVICE_NAME}/package.json ./
+COPY --from=dist-builder /usr/src/${SERVICE_NAME}/.env ./
+
+RUN ls -la
+
+RUN addgroup -S ${USER_NAME} \
+  && adduser -S -G ${USER_NAME} -h /home/${USER_NAME} ${USER_NAME} \
+  && mkdir -p /var/log/${USER_NAME} \
+  && chown ${USER_NAME} /var/log/${USER_NAME} \
+  ;
+USER ${USER_NAME}
+
+# For file logger (if ever used)
+VOLUME /var/log/${SERVICE_NAME}
+
+COPY ./docker/healthcheck.js /
+
+# Add BUILDINFO to the runtime environment
+ARG BUILDINFO
+ENV BUILDINFO $BUILDINFO
+
+# Bake-in AWS_XRAY_CONTEXT_MISSING, as default is to throw an exception
+ENV AWS_XRAY_CONTEXT_MISSING LOG_ERROR
+
+######################################################
+# Stage: server runnable
+#
+# Dist image with default command (final image)
+#
+######################################################
+
+FROM dist as server
+
+ARG SERVICE_NAME
+ARG USER_NAME
+ARG SERVICE_PORT
+
+EXPOSE ${SERVICE_PORT}
+
+HEALTHCHECK --interval=30s --timeout=12s --retries=2 --start-period=30s \
+  CMD node /healthcheck.js http://localhost:${SERVICE_PORT}/healthcheck
+
+CMD ["/usr/local/bin/node", "--trace-gc", "--trace-gc-ignore-scavenger", "dist/src/server.js"]
+
+######################################################
+# Stage: server test builder
+######################################################
+
+FROM code as test-builder
+
+RUN npm run lint || true \
+  && npm run build \
+  ;
+
+######################################################
+# Stage: server test
+#
+# Server code with test code (final image for runing unit tests)
+#
+######################################################
+
+FROM node:${NODE_VERSION}-alpine as servertest
+
+ARG SERVICE_NAME
+ARG USER_NAME
+ARG SERVICE_PORT
+
+RUN addgroup -S ${USER_NAME} \
+  && adduser -S -G ${USER_NAME} -h /home/${USER_NAME} ${USER_NAME} \
+  && mkdir -p /var/log/${USER_NAME} \
+  && chown ${USER_NAME} /var/log/${USER_NAME} \
+  ;
+
+# Add extra stuff including sudo so we can do anything we want
+RUN apk update \
+  && apk add --no-cache bash \
+  && apk add --no-cache jq \
+  && apk add --no-cache curl sudo \
+  && echo "${USER_NAME} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/${USER_NAME} \
+  && chmod 0440 /etc/sudoers.d/${USER_NAME} \
+  ;
+
+# Copy server code and modules
+# In our local dev env we bind mount over everything under ${SERVICE_NAME}
+# We then create a named volume for node_modules so the container has its
+# own version (initialized with the default)
+WORKDIR /usr/src/${SERVICE_NAME}
+COPY --from=test-builder /usr/src/${SERVICE_NAME}/package.json ./
+COPY --from=test-builder /usr/src/${SERVICE_NAME}/dist ./dist
+#COPY --from=test-builder /usr/src/${SERVICE_NAME}/test/scripts ./test/scripts
+COPY --from=test-builder /usr/src/${SERVICE_NAME}/node_modules ./node_modules
+
+USER ${USER_NAME}
+
+# Server logs during test go here (if ever used)
+VOLUME /var/log/${USER_NAME}
+
+# Reports go here
+ENV REPORTDIR=/home/${USER_NAME}/test-report
+
+# Create coverage folders
+RUN mkdir -p $REPORTDIR
+
+# These defaults are good for running tests (unit and integration) on your MacBook
+ENV NODE_ENV=dockerlocal
+ENV TEST_SERVER=http://server:${SERVICE_PORT}
+
+# Add BUILDINFO to the runtime environment
+ARG BUILDINFO
+ENV BUILDINFO $BUILDINFO
+
+CMD ["npm run test"]

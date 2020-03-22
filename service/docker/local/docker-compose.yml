@@ -1,0 +1,45 @@
+version: '3.4'
+x-service: &default-service
+  environment:
+    AWS_CONTAINER_CREDENTIALS_RELATIVE_URI:
+    # Running local
+    AWS_ACCESS_KEY_ID:
+    AWS_SECRET_ACCESS_KEY:
+    AWS_SESSION_TOKEN:
+services:
+  server:
+    <<: *default-service
+    image: ${REPO}/${SERVICE_NAME}:${TAG}
+    build:
+      context: ../../
+      dockerfile: ./docker/dockerfile
+      target: server
+      args:
+        BUILDINFO:
+        SERVICE_PORT:
+        GITHUB_PERSONAL_PACKAGE_TOKEN:
+    ports:
+      - ${SERVICE_PORT}
+    environment:
+      AWS_XRAY_CONTEXT_MISSING:
+      AWS_XRAY_DEBUG_MODE:
+      AWS_XRAY_TRACING_NAME: ${SERVICE_NAME}
+      # Needs route/bind to any TODO
+      AWS_XRAY_DAEMON_ADDRESS: host.docker.internal:2000
+
+  servertest:
+    <<: *default-service
+    image: ${REPO}/${SERVICE_NAME}-test:${TAG}
+    build:
+      context: ../../
+      dockerfile: ./docker/dockerfile
+      target: servertest
+      args:
+        BUILDINFO:
+        GITHUB_PERSONAL_PACKAGE_TOKEN:
+    volumes:
+      - ${TEST_REPORT_DIR}:/home/${SERVICE_NAME}/test-report
+
+
+
+
