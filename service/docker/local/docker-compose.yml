@@ -1,5 +1,7 @@
-version: '3.4'
+version: "3.7"
 x-service: &default-service
+  # Run with tini (init process) so signals (ctrl-c) work
+  init: true
   environment:
     AWS_CONTAINER_CREDENTIALS_RELATIVE_URI:
     # Running local
@@ -19,7 +21,10 @@ services:
         SERVICE_PORT:
         GITHUB_PERSONAL_PACKAGE_TOKEN:
     ports:
-      - ${SERVICE_PORT}
+      # https://aws.amazon.com/blogs/compute/a-guide-to-locally-testing-containers-with-amazon-ecs-local-endpoints-and-docker-compose/
+      # docker-compose run --service-ports server (docker run needs that to expose)
+      # HOST:CONTAINER
+      - ${SERVICE_PORT}:${SERVICE_PORT}
     environment:
       AWS_XRAY_CONTEXT_MISSING:
       AWS_XRAY_DEBUG_MODE:
