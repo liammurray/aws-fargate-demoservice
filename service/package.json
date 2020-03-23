@@ -18,7 +18,7 @@
     "dist:test": "mocha --config .mocharc-dist.yml",
     "dist:test:cov": "nyc npm run dist:test",
     "lint": "npm run lint:mdlint && npm run lint:eslint",
-    "lint:mdlint": "find . -maxdepth 1 -iname '*.md' | xargs markdownlint",
+    "lint:mdlint": "[ -f .markdownlint.yaml ] && markdownlint .",
     "lint:eslint": "eslint --cache --ext .ts ./",
     "start:debug": "nodemon --inspect=5858 -r ./src/server.ts",
     "start:watch": "nodemon ./src/server.ts",

@@ -1,6 +1,7 @@
 comment: 'MD044: Proper names should have the correct capitalization'
 header-increment: true
 first-header-h1: true
+
 header-style:
   style: atx
 ul-style:
