@@ -2,7 +2,7 @@
   "name": "clsdemo",
   "version": "0.1.0",
   "description": "cls experiment",
-  "main": "./dist/server.js",
+  "main": "./dist/src/server.js",
   "private": true,
   "scripts": {
     "audit-checker": "check-audit",

@@ -107,8 +107,9 @@ ARG SERVICE_PORT
 
 EXPOSE ${SERVICE_PORT}
 
+# ${SERVICE_PORT} not expanded in command
 HEALTHCHECK --interval=30s --timeout=12s --retries=2 --start-period=30s \
-  CMD node /healthcheck.js http://localhost:${SERVICE_PORT}/healthcheck
+  CMD ["node", "/healthcheck.js", "http://localhost:3005/v1/healthcheck"]
 
 CMD ["/usr/local/bin/node", "--trace-gc", "--trace-gc-ignore-scavenger", "dist/src/server.js"]
 

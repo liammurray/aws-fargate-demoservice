@@ -8,6 +8,11 @@ x-service: &default-service
     AWS_ACCESS_KEY_ID:
     AWS_SECRET_ACCESS_KEY:
     AWS_SESSION_TOKEN:
+  depends_on:
+    - ecs-local-endpoints
+  networks:
+      credentials_network:
+          ipv4_address: "169.254.170.3"
 services:
   server:
     <<: *default-service
@@ -21,9 +26,6 @@ services:
         SERVICE_PORT:
         GITHUB_PERSONAL_PACKAGE_TOKEN:
     ports:
-      # https://aws.amazon.com/blogs/compute/a-guide-to-locally-testing-containers-with-amazon-ecs-local-endpoints-and-docker-compose/
-      # docker-compose run --service-ports server (docker run needs that to expose)
-      # HOST:CONTAINER
       - ${SERVICE_PORT}:${SERVICE_PORT}
     environment:
       AWS_XRAY_CONTEXT_MISSING:
@@ -45,6 +47,35 @@ services:
     volumes:
       - ${TEST_REPORT_DIR}:/home/${SERVICE_NAME}/test-report
 
+  # This container vends credentials to your containers
+  ecs-local-endpoints:
+    # The Amazon ECS Local Container Endpoints Docker Image
+    image: amazon/amazon-ecs-local-container-endpoints
+    volumes:
+      # Mount /var/run so we can access docker.sock and talk to Docker
+      - /var/run:/var/run
+      # Mount the shared configuration directory, used by the AWS CLI and AWS SDKs
+      - $HOME/.aws/:/home/.aws/
+    environment:
+      # define the home folder; credentials will be read from $HOME/.aws
+      HOME: "/home"
+      # You can change which AWS CLI Profile is used
+      AWS_PROFILE: "default"
+    networks:
+      credentials_network:
+        # Special IP known to AWS SDKs and AWS CLI
+        ipv4_address: "169.254.170.2"
+
+networks:
+  # This special network is configured so that the local metadata
+  # service can bind to the specific IP address that ECS uses
+  # in production
+  credentials_network:
+    driver: bridge
+    ipam:
+      config:
+        # gateway: 169.254.170.1
+        - subnet: "169.254.170.0/24"
 
 
 
