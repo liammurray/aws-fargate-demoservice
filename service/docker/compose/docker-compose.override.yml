@@ -1,0 +1,40 @@
+version: "3.7"
+
+services:
+
+  server:
+    depends_on:
+      - ecs-local-endpoints
+    environment:
+      AWS_DEFAULT_REGION: us-west-2
+      AWS_XRAY_DAEMON_ADDRESS: host.docker.internal:2000
+      AWS_CONTAINER_CREDENTIALS_RELATIVE_URI: "/creds"
+    networks:
+      credentials_network:
+        ipv4_address: "169.254.170.3"
+
+
+  # Sidecare container that vends AWS credentials to containers
+  ecs-local-endpoints:
+    image: amazon/amazon-ecs-local-container-endpoints
+    volumes:
+      - /var/run:/var/run
+      - ${HOME}/.aws/:/home/.aws/
+    environment:
+      HOME: /home
+      AWS_PROFILE:
+    networks:
+      credentials_network:
+        # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-metadata-endpoint-v2.html
+        ipv4_address: "169.254.170.2"
+
+networks:
+  # Create network in CIDR range matching ECS meta service
+  credentials_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "169.254.170.0/24"
+
+
+

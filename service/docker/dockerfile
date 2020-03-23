@@ -71,8 +71,6 @@ COPY --from=dist-builder /usr/src/${SERVICE_NAME}/node_modules ./node_modules
 COPY --from=dist-builder /usr/src/${SERVICE_NAME}/package.json \
   usr/src/${SERVICE_NAME}/.env ./
 
-RUN ls -la
-
 RUN addgroup -S ${USER_NAME} \
   && adduser -S -G ${USER_NAME} -h /home/${USER_NAME} ${USER_NAME} \
   && mkdir -p /var/log/${USER_NAME} \

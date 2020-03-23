@@ -2,17 +2,7 @@ version: "3.7"
 x-service: &default-service
   # Run with tini (init process) so signals (ctrl-c) work
   init: true
-  environment:
-    AWS_CONTAINER_CREDENTIALS_RELATIVE_URI:
-    # Running local
-    AWS_ACCESS_KEY_ID:
-    AWS_SECRET_ACCESS_KEY:
-    AWS_SESSION_TOKEN:
-  depends_on:
-    - ecs-local-endpoints
-  networks:
-      credentials_network:
-          ipv4_address: "169.254.170.3"
+
 services:
   server:
     <<: *default-service
@@ -46,36 +36,4 @@ services:
         GITHUB_PERSONAL_PACKAGE_TOKEN:
     volumes:
       - ${TEST_REPORT_DIR}:/home/${SERVICE_NAME}/test-report
-
-  # This container vends credentials to your containers
-  ecs-local-endpoints:
-    # The Amazon ECS Local Container Endpoints Docker Image
-    image: amazon/amazon-ecs-local-container-endpoints
-    volumes:
-      # Mount /var/run so we can access docker.sock and talk to Docker
-      - /var/run:/var/run
-      # Mount the shared configuration directory, used by the AWS CLI and AWS SDKs
-      - $HOME/.aws/:/home/.aws/
-    environment:
-      # define the home folder; credentials will be read from $HOME/.aws
-      HOME: "/home"
-      # You can change which AWS CLI Profile is used
-      AWS_PROFILE: "default"
-    networks:
-      credentials_network:
-        # Special IP known to AWS SDKs and AWS CLI
-        ipv4_address: "169.254.170.2"
-
-networks:
-  # This special network is configured so that the local metadata
-  # service can bind to the specific IP address that ECS uses
-  # in production
-  credentials_network:
-    driver: bridge
-    ipam:
-      config:
-        # gateway: 169.254.170.1
-        - subnet: "169.254.170.0/24"
-
-
 
