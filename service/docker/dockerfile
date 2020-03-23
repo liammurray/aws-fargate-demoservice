@@ -68,8 +68,8 @@ WORKDIR /usr/src/${SERVICE_NAME}
 # usr/src/<service/dist/src a bit weird but makes package.json happy
 COPY --from=dist-builder /usr/src/${SERVICE_NAME}/dist/src ./dist/src
 COPY --from=dist-builder /usr/src/${SERVICE_NAME}/node_modules ./node_modules
-COPY --from=dist-builder /usr/src/${SERVICE_NAME}/package.json ./
-COPY --from=dist-builder /usr/src/${SERVICE_NAME}/.env ./
+COPY --from=dist-builder /usr/src/${SERVICE_NAME}/package.json \
+  usr/src/${SERVICE_NAME}/.env ./
 
 RUN ls -la
 
@@ -152,16 +152,20 @@ RUN apk update \
   ;
 
 # Copy server code and modules
-# In our local dev env we bind mount over everything under ${SERVICE_NAME}
-# We then create a named volume for node_modules so the container has its
-# own version (initialized with the default)
 WORKDIR /usr/src/${SERVICE_NAME}
-COPY --from=test-builder /usr/src/${SERVICE_NAME}/package.json ./
-COPY --from=test-builder /usr/src/${SERVICE_NAME}/dist ./dist
-#COPY --from=test-builder /usr/src/${SERVICE_NAME}/test/scripts ./test/scripts
-COPY --from=test-builder /usr/src/${SERVICE_NAME}/node_modules ./node_modules
+
+# So coverage test can write coverage folder
+RUN chown ${USER_NAME}:${USER_NAME} ./
 
 USER ${USER_NAME}
+
+# These get root by default (pass --chown=<user>:<group> if needed)
+COPY --from=test-builder /usr/src/${SERVICE_NAME}/package.json \
+  /usr/src/${SERVICE_NAME}/.mocha* ./
+COPY --from=test-builder /usr/src/${SERVICE_NAME}/dist ./dist
+COPY --from=test-builder /usr/src/${SERVICE_NAME}/node_modules ./node_modules
+
+
 
 # Server logs during test go here (if ever used)
 VOLUME /var/log/${USER_NAME}
@@ -180,4 +184,4 @@ ENV TEST_SERVER=http://server:${SERVICE_PORT}
 ARG BUILDINFO
 ENV BUILDINFO $BUILDINFO
 
-CMD ["npm", "run", "test"]
+CMD ["npm", "run", "dist:test:cov"]

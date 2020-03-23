@@ -1,4 +1,4 @@
-# Local
+# Docker compose
 
 ## Running
 
@@ -10,15 +10,29 @@ Run server with `--service-ports` when invoking via docker-compose (so exposed p
   docker-compose run --service-ports server
 ```
 
-## Building
+## Debugginng
+
+Pass `sh` or another command to `run`
+
+```bash
+docker-compose run  servertest sh
+```
+
+Then you can run commands in shell.
+
+## Building images (server and servertest)
+
+### Local
 
 ```bash
   docker-compose build
 ```
 
-## CI/CD Build
+### CI/CD
 
-Work in progress. Currently logic to build, test and push in `build.sh` (also exports BUILD_INFO).
+Work in progress. In addition to building creates BUILD_INFO to embed in build (version, git hash, etc.).
+
+Currently logic to build, test and push in `build.sh` (also exports BUILD_INFO).
 
 This will move out (to github actions).
 

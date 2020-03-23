@@ -31,7 +31,7 @@ echo "Repo: $REPO"
 $DOCKER_LOGIN_CMD
 
 # User docker-compose to run "docker build"
-cd ./local
+cd ./compose
 
 echo "Docker config:"
 docker-compose -f docker-compose.yml --no-ansi config
