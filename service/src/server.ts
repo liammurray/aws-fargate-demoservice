@@ -1,28 +1,16 @@
 import express, { Request, Response, NextFunction } from 'express'
 import { v4 as uuid } from 'uuid'
-import CorrelationIds from './instrumentation/correlationIds'
 import { envPort } from './util/env'
 import { v1 } from './routes'
-import ctx, { getRootLogger } from './globals'
+import ctx from './globals'
 import bodyParser from 'body-parser'
 import HttpStatus from 'http-status-codes'
 
 function initClsMiddleware(req: Request, res: Response, next): void {
-  const ns = ctx.namespace
-  ns.run(() => {
-    ns.bindEmitter(req)
-    ns.bindEmitter(res)
-
-    const ids = new CorrelationIds()
-    ids.put('default', uuid())
-    ctx.correlationIds = ids
-
-    const context = {
-      'x-request-id': uuid(),
-      ...ids.get(),
-    }
-    ctx.logger = getRootLogger().child(context)
-
+  ctx.run({ emitters: [req, res] }, () => {
+    // '_' adds 'x-correlation-id'
+    ctx.correlationIds.put({ _: uuid() })
+    ctx.childLogger({ 'x-request-id': uuid() })
     next()
   })
 }

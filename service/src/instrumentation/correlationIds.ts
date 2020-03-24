@@ -1,6 +1,8 @@
 export type IdMap = {
   [key: string]: string
 }
+const DEFAULT_SUFFIX = '-_'
+
 export default class CorrelationIds {
   constructor(private readonly ids = {}, private readonly prefix: string = 'x-correlation-id-') {}
 
@@ -8,8 +10,25 @@ export default class CorrelationIds {
     return str.startsWith(this.prefix) ? str : `${this.prefix}${str}`
   }
 
-  put(name: string, val: string): void {
-    this.ids[this.withPrefix(name)] = val
+  /**
+   * Fixes up keys when adding IDs. Ensures ID is normalized:
+   *  1) lowercase
+   *  2) ensures 'x-correlation-id-' prefix if not there
+   *  3) handles '_' as special case so we end up with default 'x-correlation-id'
+   */
+  fixup(str: string): string {
+    str = this.withPrefix(str).toLowerCase()
+    str.lastIndexOf
+    if (str.endsWith(DEFAULT_SUFFIX)) {
+      str = str.slice(0, str.length - DEFAULT_SUFFIX.length)
+    }
+    return str
+  }
+
+  put(other: IdMap): void {
+    for (const [key, val] of Object.entries(other)) {
+      this.ids[this.fixup(key)] = val
+    }
   }
 
   get(): IdMap {

@@ -17,6 +17,7 @@ const AXIOS_OPTS = {
 
 async function getOrders(_req: Request, res: Response): Promise<void> {
   const client = await getOrdersApiClient()
+  ctx.logger.info('getOrders')
 
   // See https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-known-issues.html#api-gateway-known-issues-rest-apis
   const result = await client.listOrders('0', 'ordered', '3', AXIOS_OPTS)
