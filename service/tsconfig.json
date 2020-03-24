@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "allowSyntheticDefaultImports": true,
     "strictNullChecks": true,
     "noImplicitThis": true,
     "alwaysStrict": true,
@@ -20,9 +19,8 @@
     "declaration": true,
     // Implies allowSyntheticDefaultImports: true
     "esModuleInterop": true,
-    "lib": ["es6", "esnext.asynciterable"],
+    "lib": ["es2018"],
     "module": "commonjs",
-    "types": ["node", "mocha"],
     // Raise error on expressions and declarations with an implied 'any' type.
     "noImplicitAny": false,
     // Redirect output structure to the directory
