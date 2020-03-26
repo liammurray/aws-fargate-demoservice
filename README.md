@@ -14,8 +14,6 @@ The service makes API calls to a [simple orders API](https://github.com/liammurr
 
 - Typescript
 
-- Docker multistage build creates two images: dist image for deployment; test image to run tests inside a docker container
-
 ## Quickstart
 
 [Deploy](./stack/README.md)
@@ -25,9 +23,7 @@ The service makes API calls to a [simple orders API](https://github.com/liammurr
 ## TODO
 
 - make demoservice-test docker work
-
   - npm run test doesn't work because it runs ts-node pointing to test source (not dist)
-
 - x-ray and http client
-
-- auth endpoint from api client
+- obtain auth endpoint from api client (swagger security schema thing?)
+- alb target group use docker healthcheck instead of healthcheck endpoint
