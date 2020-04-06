@@ -25,10 +25,20 @@ export default class CorrelationIds {
     return str
   }
 
-  put(other: IdMap): void {
-    for (const [key, val] of Object.entries(other)) {
+  /**
+   * Adds all entries from map
+   */
+  put(idMap: IdMap): void {
+    for (const [key, val] of Object.entries(idMap)) {
       this.ids[this.fixup(key)] = val
     }
+  }
+
+  /**
+   * Adds one entry
+   */
+  set(key: string, val: string) {
+    this.ids[this.fixup(key)] = val
   }
 
   get(): IdMap {

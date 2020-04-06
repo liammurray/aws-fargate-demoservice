@@ -8,7 +8,7 @@ import HttpStatus from 'http-status-codes'
 
 function initClsMiddleware(req: Request, res: Response, next): void {
   ctx.run({ emitters: [req, res] }, () => {
-    // '_' adds 'x-correlation-id'
+    // Default correlation ID (_)
     ctx.correlationIds.put({ _: uuid() })
     ctx.childLogger({ 'x-request-id': uuid() })
     next()

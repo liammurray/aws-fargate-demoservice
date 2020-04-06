@@ -7,15 +7,11 @@ import { EventEmitter } from 'events'
 
 dotenv.config()
 
-/** Parent logger */
-export const logger = pino({
+const pinoBaseOpts: pino.LoggerOptions = {
   level: envStr('LOG_LEVEL'),
-  name: envStr('SERVICE_NAME'),
-})
-
-export function getRootLogger(): Logger {
-  return logger
+  name: envStr('SERVICE_NAME')
 }
+
 
 export type RunParams = {
   emitters: EventEmitter[]
@@ -23,7 +19,10 @@ export type RunParams = {
 
 export type RunFunc = (...args: any[]) => void
 
-class Context {
+const KEY_LOGGER = 'logger'
+const KEY_IDS = 'cids'
+
+class GlobalClsContext {
   private readonly ns: Namespace
   constructor(name = 'myapp') {
     this.ns = createNamespace(name)
@@ -39,35 +38,39 @@ class Context {
     }
 
     this.ns.run(() => {
-      this.ns.set('correlationIds', new CorrelationIds())
+
+      this.ns.set(KEY_IDS, new CorrelationIds())
+
+      const logger = pino({
+        ...pinoBaseOpts,
+        mixin: () => {
+          return this.correlationIds.get()
+        }
+      })
+
+      this.ns.set(KEY_LOGGER, logger)
+
       func()
     })
   }
 
-  set logger(logger: Logger) {
-    this.ns.set('logger', logger)
-  }
-
-  get logger(): Logger {
-    return (this.ns.get('logger') as Logger) || getRootLogger()
-  }
-
-  /**
-   * Creates and pushes child logger
+   /**
+   * Creates and sets child logger in context
    * Note:
    *    Pino adds duplicate bindings (we could strip out based on current bindings)
-   *    We don't support removing correlation ids
    */
   childLogger(bindings: pino.Bindings) {
-    const childBindings = {
-      ...bindings,
-      ...this.correlationIds.get(),
-    }
-    this.logger = this.logger.child(childBindings)
+    const logger = this.logger.child(bindings)
+    this.ns.set(KEY_LOGGER, logger)
+  }
+
+
+  get logger(): Logger {
+    return this.ns.get(KEY_LOGGER) as Logger
   }
 
   get correlationIds(): CorrelationIds {
-    return this.ns.get('correlationIds') as CorrelationIds
+    return this.ns.get(KEY_IDS) as CorrelationIds
   }
 
   get namespace(): Namespace {
@@ -75,6 +78,6 @@ class Context {
   }
 }
 
-const ctx = new Context()
-
+const ctx = new GlobalClsContext()
 export default ctx
+
