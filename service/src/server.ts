@@ -7,12 +7,12 @@ import bodyParser from 'body-parser'
 import HttpStatus from 'http-status-codes'
 
 function initClsMiddleware(req: Request, res: Response, next): void {
-  ctx.run({ emitters: [req, res] }, () => {
-    // Default correlation ID (_)
-    ctx.correlationIds.put({ _: uuid() })
+  ctx.run(() => {
+    // TODO capture ids
+    ctx.correlationIds.put({ demoservice: uuid() })
     ctx.childLogger({ 'x-request-id': uuid() })
     next()
-  })
+  }, { emitters: [req, res] })
 }
 
 function setDefaultHeadersMiddleware(req: Request, res: Response, next): void {

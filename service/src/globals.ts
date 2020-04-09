@@ -1,7 +1,7 @@
 import pino, { Logger } from 'pino'
 import dotenv from 'dotenv'
 import { createNamespace, Namespace } from 'cls-hooked'
-import CorrelationIds, { IdMap } from './instrumentation/correlationIds'
+import CorrelationIds from './instrumentation/correlationIds'
 import { envStr } from './util/env'
 import { EventEmitter } from 'events'
 
@@ -14,10 +14,10 @@ const pinoBaseOpts: pino.LoggerOptions = {
 
 
 export type RunParams = {
-  emitters: EventEmitter[]
+  emitters?: EventEmitter[]
 }
 
-export type RunFunc = (...args: any[]) => void
+export type RunFunc<RT> = (...args: any[]) => RT
 
 const KEY_LOGGER = 'logger'
 const KEY_IDS = 'cids'
@@ -28,29 +28,38 @@ class GlobalClsContext {
     this.ns = createNamespace(name)
   }
 
-  run(params: RunParams, func: RunFunc) {
-    if (this.ns.active) {
-      // For simplicity of implementation (otherwise need to copy logger and map)
-      throw new Error('Nested CLS contexts forbidden')
-    }
-    for (const e of params.emitters) {
+  /**
+   * Returns return value from 'func'
+   */
+  run<RT>(func: RunFunc<RT>, params: RunParams = {}): RT {
+
+    for (const e of params.emitters || []) {
       this.ns.bindEmitter(e)
     }
 
-    this.ns.run(() => {
+    return this.ns.runAndReturn(() => {
+      // Support possible nesting
 
-      this.ns.set(KEY_IDS, new CorrelationIds())
+      // Clone existing
+      const ids = {...(this.correlationIds?.get() || {})}
+      this.ns.set(KEY_IDS, new CorrelationIds(ids))
 
-      const logger = pino({
+      const old = this.logger
+
+      // Always create new logger so it uses right mixin
+      let logger = pino({
         ...pinoBaseOpts,
         mixin: () => {
+          // Dynamically add IDs to every log
           return this.correlationIds.get()
         }
       })
-
+      if (old) {
+        logger = logger.child(old.bindings())
+      }
       this.ns.set(KEY_LOGGER, logger)
 
-      func()
+      return func()
     })
   }
 
