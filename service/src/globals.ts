@@ -9,9 +9,8 @@ dotenv.config()
 
 const pinoBaseOpts: pino.LoggerOptions = {
   level: envStr('LOG_LEVEL'),
-  name: envStr('SERVICE_NAME')
+  name: envStr('SERVICE_NAME'),
 }
-
 
 export type RunParams = {
   emitters?: EventEmitter[]
@@ -32,7 +31,6 @@ class GlobalClsContext {
    * Returns return value from 'func'
    */
   run<RT>(func: RunFunc<RT>, params: RunParams = {}): RT {
-
     for (const e of params.emitters || []) {
       this.ns.bindEmitter(e)
     }
@@ -41,7 +39,7 @@ class GlobalClsContext {
       // Support possible nesting
 
       // Clone existing
-      const ids = {...(this.correlationIds?.get() || {})}
+      const ids = { ...(this.correlationIds?.get() || {}) }
       this.ns.set(KEY_IDS, new CorrelationIds(ids))
 
       const old = this.logger
@@ -51,8 +49,8 @@ class GlobalClsContext {
         ...pinoBaseOpts,
         mixin: () => {
           // Dynamically add IDs to every log
-          return this.correlationIds.get()
-        }
+          return this.correlationIds.getLogs()
+        },
       })
       if (old) {
         logger = logger.child(old.bindings())
@@ -63,16 +61,15 @@ class GlobalClsContext {
     })
   }
 
-   /**
+  /**
    * Creates and sets child logger in context
    * Note:
    *    Pino adds duplicate bindings (we could strip out based on current bindings)
    */
-  childLogger(bindings: pino.Bindings) {
+  childLogger(bindings: pino.Bindings): void {
     const logger = this.logger.child(bindings)
     this.ns.set(KEY_LOGGER, logger)
   }
-
 
   get logger(): Logger {
     return this.ns.get(KEY_LOGGER) as Logger
@@ -89,4 +86,3 @@ class GlobalClsContext {
 
 const ctx = new GlobalClsContext()
 export default ctx
-

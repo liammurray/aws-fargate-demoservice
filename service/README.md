@@ -18,7 +18,7 @@ Simple test express server:
 
 1.  Configure npm
 
-    You should set GITHUB_PERSONAL_PACKAGE_TOKEN to access @liammurray (see .npmrc)
+    You should set NOD15C_NPM_TOKEN to access @liammurray (see .npmrc)
 
 1.  For development while actively making changes to client use `npm link` to link the local orders
     api client (generated in the orders api service project):

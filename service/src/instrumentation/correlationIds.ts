@@ -2,21 +2,63 @@ export type IdMap = {
   [key: string]: string
 }
 
-const DEFAULT_PREFIX='nod15c-cid-'
-export default class CorrelationIds {
-  constructor(private readonly ids = {}, private readonly prefix: string = DEFAULT_PREFIX) {}
+function isUpper(ch: string): boolean {
+  return ch >= 'A' && ch <= 'Z'
+}
 
-  withPrefix(str: string): string {
-    return str.startsWith(this.prefix) ? str : `${this.prefix}${str}`
+function startsUpper(str: string): boolean {
+  return str.length != 0 && isUpper(str[0])
+}
+
+function capFirst(str: string): string {
+  if (str.length != 0) {
+    return `${str[0].toUpperCase()}${str.slice(1)}`
+  }
+  return str
+}
+
+function uncapFirst(str: string): string {
+  if (str.length != 0) {
+    return `${str[0].toLowerCase()}${str.slice(1)}`
+  }
+  return str
+}
+
+/**
+ * Splits PascalCase and camelCase
+ */
+export function caseSplit(str: string): string[] {
+  const parts: string[] = []
+
+  let begin = 0
+  for (let idx = 1; idx < str.length; ++idx) {
+    if (isUpper(str[idx])) {
+      parts.push(str.slice(begin, idx))
+      begin = idx
+    }
+  }
+  parts.push(str.slice(begin, str.length))
+  return parts.filter(Boolean)
+}
+
+export type Opts = {
+  logPrefix: string
+  headerPrefix: string
+}
+
+const defaultOpts: Opts = {
+  logPrefix: 'cid',
+  headerPrefix: 'nod15c-cid',
+}
+
+export default class CorrelationIds {
+  private readonly opts: Opts
+  constructor(private readonly ids = {}, opts?: Partial<Opts>) {
+    this.opts = { ...defaultOpts, ...opts }
   }
 
-  /**
-   * Fixes up keys when adding IDs. Ensures ID is normalized:
-   *  1) lowercase
-   *  2) ensures correlation id prefix if not there
-   */
   fixup(str: string): string {
-    return  this.withPrefix(str).toLowerCase()
+    return uncapFirst(str)
   }
 
   /**
@@ -31,11 +73,38 @@ export default class CorrelationIds {
   /**
    * Adds one entry
    */
-  set(key: string, val: string) {
+  set(key: string, val: string): void {
     this.ids[this.fixup(key)] = val
   }
 
   get(): IdMap {
     return this.ids
+  }
+
+  toHeaderKey(key: string): string {
+    const suffix = caseSplit(key)
+      .map(s => s.toLowerCase())
+      .join('-')
+    return `${this.opts.headerPrefix}-${suffix}`
+  }
+
+  toLogKey(key: string): string {
+    return `${this.opts.logPrefix}${capFirst(key)}`
+  }
+
+  getLogs(): IdMap {
+    const out: IdMap = {}
+    for (const [key, val] of Object.entries<string>(this.ids)) {
+      out[this.toLogKey(key)] = val
+    }
+    return out
+  }
+
+  getHeaders(): IdMap {
+    const out: IdMap = {}
+    for (const [key, val] of Object.entries<string>(this.ids)) {
+      out[this.toHeaderKey(key)] = val
+    }
+    return out
   }
 }

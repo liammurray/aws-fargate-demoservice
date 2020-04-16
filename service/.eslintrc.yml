@@ -5,7 +5,11 @@ extends:
   - eslint:recommended
   - plugin:@typescript-eslint/recommended
   - prettier/@typescript-eslint
+  # From eslint-config-prettier
   - plugin:prettier/recommended
+ignorePatterns:
+  - node_modules/**
+  - dist/**
 globals:
   Atomics: readonly
   SharedArrayBuffer: readonly
@@ -15,7 +19,10 @@ parserOptions:
   sourceType: module
 root: true
 plugins:
-  - '@typescript-eslint'
+  # eslint-plugin- prefix can be omitted
+  # /eslint-plugin for scoped plugins can be omitted
+  - "@typescript-eslint"
+  - prettier
 rules:
   quotes:
     - error

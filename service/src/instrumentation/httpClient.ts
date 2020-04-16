@@ -1,5 +1,9 @@
-// import { ctx } from './globals'
-// import http from 'http'
+import { ctx } from '~/globals'
+import http from 'http'
+
+/**
+ * patches the HTTP and HTTPS node built-in libraries and returns a copy of the module with tracing enabled
+ */
 
 // // function recordMetrics = ({ status }) => {
 // //   const end = Date.now()

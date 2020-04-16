@@ -1,2 +1,4 @@
-node_modules
-dist
+# markdownlint-cli
+node_modules/
+dist/
+lambda/

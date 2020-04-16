@@ -29,7 +29,7 @@ WORKDIR /usr/src/${SERVICE_NAME}
 COPY . .
 
 # Run npm install and audit before adding source (so source-only change doesn't bust image cache)
-ARG GITHUB_PERSONAL_PACKAGE_TOKEN
+ARG NOD15C_NPM_TOKEN
 RUN npm ci \
   && npm run audit-checker \
   && rm -f .npmrc \

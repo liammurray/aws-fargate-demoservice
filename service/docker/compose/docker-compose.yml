@@ -14,7 +14,7 @@ services:
       args:
         BUILDINFO:
         SERVICE_PORT:
-        GITHUB_PERSONAL_PACKAGE_TOKEN:
+        NOD15C_NPM_TOKEN:
     ports:
       - ${SERVICE_PORT}:${SERVICE_PORT}
     environment:
@@ -33,7 +33,7 @@ services:
       target: servertest
       args:
         BUILDINFO:
-        GITHUB_PERSONAL_PACKAGE_TOKEN:
+        NOD15C_NPM_TOKEN:
     volumes:
       - ${TEST_REPORT_DIR}:/home/${SERVICE_NAME}/test-report
 
