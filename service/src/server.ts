@@ -5,6 +5,9 @@ import { v1 } from './routes'
 import ctx from './globals'
 import bodyParser from 'body-parser'
 import HttpStatus from 'http-status-codes'
+import hookHttp from './instrumentation/hookHttp'
+
+hookHttp()
 
 function initClsMiddleware(req: Request, res: Response, next): void {
   ctx.run(
