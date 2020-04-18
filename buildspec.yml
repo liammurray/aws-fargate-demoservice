@@ -1,0 +1,41 @@
+version: 0.2
+
+# Runs in container with docker installed
+env:
+  parameter-store:
+    NOD15C_NPM_TOKEN: "${NPM_TOKEN_PARAM_KEY}"
+  variables:
+    IMAGE_TAG: latest
+    IMAGE_NAME: demoservice
+phases:
+  install:
+    runtime-versions:
+      nodejs: 12
+  pre_build:
+    commands:
+      - REPO="${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+      - PASSWORD=$(aws ecr get-login-password)
+      - echo $PASSWORD | docker login --password-stdin --username AWS $REPO
+      - echo Logged into $REPO
+  build:
+    commands:
+      - cd ./service
+      # Run these locally for now (later in container)
+      - npm ci
+      - npm run build
+      - npm run lint
+      - npm run test
+      # Build docker image
+      - cd ./docker
+      - ./build.sh
+
+  post_build:
+    commands:
+      - echo $CODEBUILD_SOURCE_VERSION
+      - echo $CODEBUILD_BUILD_SUCCEEDING
+      - |
+        if [ $CODEBUILD_BUILD_SUCCEEDING -eq 1 ]; then
+          echo "Pushing to ECR"
+          docker push ${REPO}/${IMAGE_NAME}:${IMAGE_TAG}
+        fi
+

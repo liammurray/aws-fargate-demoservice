@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Run this to run codebuild locally
+#
+codebuild_build.sh -i aws/codebuild/standard:4.0 -e .local-codebuild-env -a .codebuild-artifacts -c -b ./buildspec.yml
