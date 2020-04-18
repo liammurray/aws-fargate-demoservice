@@ -2,11 +2,24 @@
 
 ## Quickstart
 
-Deploy log-group and ECR repo
+### Dependencies
+
+Account global stack should be created first. (Creates common services log group and sets up codebuild token for account.)
+
+SSM params and SystemManager secrets (see paths in CDK code)
+
+### Deploy build environment
+
+This creates:
+
+- ECR repo for demoservice
+- CodeBuild project that builds and pushes to ECR on push to master branch
 
 ```bash
-cdk deploy services-common
+cdk deploy demoservice-build
 ```
+
+### Deploy service
 
 ```bash
 aws ecr describe-repositories

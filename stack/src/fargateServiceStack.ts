@@ -7,14 +7,16 @@ import * as certman from '@aws-cdk/aws-certificatemanager'
 import * as elbv2 from '@aws-cdk/aws-elasticloadbalancingv2'
 import * as route53 from '@aws-cdk/aws-route53'
 import * as iam from '@aws-cdk/aws-iam'
+import { Fn } from '@aws-cdk/core'
 import * as logs from '@aws-cdk/aws-logs'
-import { pathToFileURL } from 'url'
 
+/**
+ * Fargate service
+ */
 export interface FargateServiceStackProps extends cdk.StackProps {
   readonly certId: string
   readonly dnsName: string
   readonly domainApex: string
-  readonly env: cdk.Environment
   readonly serviceName: string
 }
 
@@ -26,9 +28,13 @@ export default class FargateServiceStack extends cdk.Stack {
     super(scope, id, props)
 
     // Lookups (we could pass from other stack too)
-    const logGroup = logs.LogGroup.fromLogGroupName(this, 'logGroup', '/nod15c/services')
+    const logGroup = logs.LogGroup.fromLogGroupArn(
+      this,
+      'LogGroup',
+      Fn.importValue('ServicesLogGroupArn')
+    )
     const repository = ecr.Repository.fromRepositoryName(this, 'repo', props.serviceName)
-    const regionCertArn = `arn:aws:acm:${props.env.region}:${props.env.account}:certificate/${props.certId}`
+    const regionCertArn = `arn:aws:acm:${this.region}:${this.account}:certificate/${props.certId}`
     const certificate = certman.Certificate.fromCertificateArn(this, 'albCert', regionCertArn)
     const domainZone = route53.HostedZone.fromLookup(this, 'zone', {
       domainName: props.domainApex,
@@ -43,7 +49,7 @@ export default class FargateServiceStack extends cdk.Stack {
     })
 
     const executionRole = this.getTaskExecutionRole()
-    const taskRole = this.getTaskRole(props)
+    const taskRole = this.getTaskRole()
 
     // Creates:
     //   ALB, target group, ecs cluster service, route53 entries, etc.
@@ -81,7 +87,7 @@ export default class FargateServiceStack extends cdk.Stack {
     })
   }
 
-  private addTracing(pat) {
+  private addTracing(pat: EcsPatterns.ApplicationLoadBalancedFargateService): void {
     const taskDef = pat.taskDefinition
 
     const xrayContainer = taskDef.addContainer('xray-daemon', {
@@ -91,13 +97,13 @@ export default class FargateServiceStack extends cdk.Stack {
     })
 
     xrayContainer.addPortMappings({
-      hostPort: 0,
+      hostPort: 2000,
       containerPort: 2000,
-      protocol: 'udp',
+      protocol: ecs.Protocol.UDP,
     })
   }
 
-  getTaskExecutionRole() {
+  getTaskExecutionRole(): iam.Role {
     // Role ecs service assumes to launch and manage the service (push logs, etc.)
     //
     const executionRole = new iam.Role(this, 'taskExecutionRole', {
@@ -118,7 +124,7 @@ export default class FargateServiceStack extends cdk.Stack {
     return executionRole
   }
 
-  getTaskRole(props: FargateServiceStackProps) {
+  getTaskRole(): iam.Role {
     // Role for task itself (access SSM, bucket, etc.)
     //
     const role = new iam.Role(this, 'taskRole', {
@@ -131,7 +137,7 @@ export default class FargateServiceStack extends cdk.Stack {
         actions: ['ssm:Describe*'],
       })
     )
-    const paramPath = `arn:aws:ssm:${props.env.region}:${props.env.account}:parameter/api/clientcreds/*`
+    const paramPath = `arn:aws:ssm:${this.region}:${this.account}:parameter/api/clientcreds/*`
     role.addToPolicy(
       new iam.PolicyStatement({
         resources: [paramPath],
