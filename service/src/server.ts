@@ -1,20 +1,29 @@
 import express, { Request, Response, NextFunction } from 'express'
 import { v4 as uuid } from 'uuid'
-import { envPort } from './util/env'
+import { envPort, envStr } from './util/env'
 import { v1 } from './routes'
 import ctx from './globals'
 import bodyParser from 'body-parser'
 import HttpStatus from 'http-status-codes'
-import hookHttp from './instrumentation/hookHttp'
+import { instrumentGlobalHttps } from './instrumentation/hookHttp'
+import xray from 'aws-xray-sdk'
 
-hookHttp()
+if (ctx.config.hookGlobalHttp) {
+  ctx.logger.info('Enabling HTTP global instrumentation')
+  instrumentGlobalHttps()
+}
+
+xray.config([xray.plugins.ECSPlugin])
+xray.setLogger(ctx.logger)
+xray.enableAutomaticMode()
+xray.setContextMissingStrategy('LOG_ERROR')
 
 function initClsMiddleware(req: Request, res: Response, next): void {
   ctx.run(
     () => {
       // TODO capture ids
       ctx.correlationIds.put({ demoService: uuid() })
-      ctx.childLogger({ 'x-request-id': uuid() })
+      ctx.childLogger({ requestId: uuid() })
       next()
     },
     { emitters: [req, res] }
@@ -35,9 +44,9 @@ function setDefaultHeadersMiddleware(req: Request, res: Response, next): void {
 }
 
 const app = express()
-const port = envPort('PORT')
 
 app.use(initClsMiddleware)
+app.use(xray.express.openSegment(envStr('SERVICE_NAME')))
 app.use(setDefaultHeadersMiddleware)
 app.use(bodyParser.json())
 
@@ -55,4 +64,7 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
   res.status(err.status || err.statusCode || HttpStatus.INTERNAL_SERVER_ERROR).end()
 })
 
-app.listen(port, () => console.log(`Example app listening on port ${port}!`))
+app.use(xray.express.closeSegment())
+
+const port = ctx.config.port
+app.listen(port, () => ctx.logger.info(`Listening on port ${port}!`))

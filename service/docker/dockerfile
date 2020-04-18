@@ -87,9 +87,6 @@ COPY ./docker/healthcheck.js /
 ARG BUILDINFO
 ENV BUILDINFO $BUILDINFO
 
-# Bake-in AWS_XRAY_CONTEXT_MISSING, as default is to throw an exception
-ENV AWS_XRAY_CONTEXT_MISSING LOG_ERROR
-
 ######################################################
 # Stage: server runnable
 #

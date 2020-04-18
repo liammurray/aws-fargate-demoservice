@@ -4,13 +4,19 @@ import { createSSM, getSecureParam } from '~/util/awsUtil'
 import querystring from 'querystring'
 import ctx from '~/globals'
 import { envStr } from '~/util/env'
+import { DefaultApi } from '@liammurray/orders-client-axios'
 
+// Numeric args are typed as strings (TODO figure it out)
+// See: https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-known-issues.html#api-gateway-known-issues-rest-apis
 // https://github.com/OpenAPITools/openapi-generator/tree/master/samples/openapi3/client/petstore/javascript-es6
 
 type TokenRequestOpts = {
   auth: AxiosBasicCredentials
   endpoint: string
 }
+
+// The generator currently doesn't name the API correctly (TODO figure it out)
+export type OrdersApiClient = DefaultApi
 
 class TokenGetter {
   private accessToken?: string
@@ -51,7 +57,7 @@ class TokenGetter {
     }
     const strip = { ...config }
     delete strip.auth
-    ctx.logger.info(strip, 'Fetching access token')
+    ctx.logger.info('Fetching access token', strip)
     const res = await axios.post(this.opts.endpoint, form, config)
     const body = res.data
     this.accessToken = body.access_token
@@ -77,20 +83,22 @@ async function createTokenGetter(): Promise<TokenGetter> {
 class OrdersClientGetter {
   constructor(private readonly tokenGetter: TokenGetter) {}
   async get(): Promise<OrdersApi.DefaultApi> {
-    // Get valid token
-    const at = await this.tokenGetter.get()
-    // Client sets 'Authorization' header to this.
-    const apiKey = `Bearer ${at}`
-
-    // const AXIOS_OPTS = {
-    //   // So we get 404, etc. instead of throw
-    //   validateStatus: (): boolean => true,
-    // }
-    // const customAxios = axios.create(AXIOS_OPTS)
-
-    // Pass as 'apiKey' because that is scheme we define in swagger
-    return new OrdersApi.DefaultApi({ apiKey })
+    // We specify security scheme 'apiKey' in swagger (until we figure out OAuth2 for client credentials).
+    // We therefore pass the 'Authorization' header value as as apiKey
+    const accessToken = await this.tokenGetter.get()
+    const authHeader = `Bearer ${accessToken}`
+    const basePath = envStr('ORDERS_API_ENDPOINT') || 'https://dev-api.nod15c.com/orders'
+    return new OrdersApi.DefaultApi({ apiKey: authHeader }, basePath)
   }
+
+  // private createAxios(): AxiosInstance | undefined {
+  //   const AXIOS_OPTS: AxiosRequestConfig = {
+  //     // So we get 404, etc. instead of throw
+  //     validateStatus: (): boolean => true,
+  //   }
+  //   // Needs to be compat with version that generated client uses
+  //   return axios.create(AXIOS_OPTS)
+  // }
 }
 
 let getter: OrdersClientGetter

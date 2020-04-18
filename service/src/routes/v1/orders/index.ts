@@ -19,7 +19,6 @@ async function getOrders(_req: Request, res: Response): Promise<void> {
   const client = await getOrdersApiClient()
   ctx.logger.info('getOrders')
 
-  // See https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-known-issues.html#api-gateway-known-issues-rest-apis
   const result = await client.listOrders('0', 'ordered', '3', AXIOS_OPTS)
   switch (result.status) {
     case HttpStatus.OK: {
@@ -38,7 +37,7 @@ async function getOrders(_req: Request, res: Response): Promise<void> {
 }
 
 async function deleteOrderById(req: Request, res: Response): Promise<void> {
-  ctx.logger.info('deleteOrderById', req.params)
+  ctx.logger.info('deleteOrderById', { params: req.params })
 
   const client = await getOrdersApiClient()
 

@@ -1,8 +1,8 @@
-import pino, { Logger } from 'pino'
+import pino, { Logger, LogFn } from 'pino'
 import dotenv from 'dotenv'
 import { createNamespace, Namespace } from 'cls-hooked'
 import CorrelationIds from './instrumentation/correlationIds'
-import { envStr } from './util/env'
+import { envStr, envBool, envPort } from './util/env'
 import { EventEmitter } from 'events'
 
 dotenv.config()
@@ -12,6 +12,25 @@ const pinoBaseOpts: pino.LoggerOptions = {
   name: envStr('SERVICE_NAME'),
 }
 
+const hooks = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  logMethod(inputArgs: any[], method: any): void {
+    if (inputArgs.length >= 2) {
+      const arg1 = inputArgs.shift()
+      const arg2 = inputArgs.shift()
+      return method.apply(this, [arg2, arg1, ...inputArgs])
+    }
+    return method.apply(this, inputArgs)
+  },
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+;(pinoBaseOpts as any).hooks = hooks
+
+// Used by default if outside cls context
+const globalLogger = pino({
+  ...pinoBaseOpts,
+})
+
 export type RunParams = {
   emitters?: EventEmitter[]
 }
@@ -20,6 +39,16 @@ export type RunFunc<RT> = (...args: any[]) => RT
 
 const KEY_LOGGER = 'logger'
 const KEY_IDS = 'cids'
+
+type Config = {
+  hookGlobalHttp: boolean
+  port: number
+}
+
+const config: Config = {
+  hookGlobalHttp: envBool('INSTRUMENT_GLOBAL_HTTP', true),
+  port: envPort('PORT'),
+}
 
 class GlobalClsContext {
   private readonly ns: Namespace
@@ -71,8 +100,12 @@ class GlobalClsContext {
     this.ns.set(KEY_LOGGER, logger)
   }
 
+  get config(): Config {
+    return config
+  }
+
   get logger(): Logger {
-    return this.ns.get(KEY_LOGGER) as Logger
+    return (this.ns.get(KEY_LOGGER) as Logger) || globalLogger
   }
 
   get correlationIds(): CorrelationIds {

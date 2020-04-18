@@ -48,17 +48,13 @@ export type Opts = {
 
 const defaultOpts: Opts = {
   logPrefix: 'cid',
-  headerPrefix: 'nod15c-cid',
+  headerPrefix: 'Nod15c-Id',
 }
 
 export default class CorrelationIds {
   private readonly opts: Opts
   constructor(private readonly ids = {}, opts?: Partial<Opts>) {
     this.opts = { ...defaultOpts, ...opts }
-  }
-
-  fixup(str: string): string {
-    return uncapFirst(str)
   }
 
   /**
@@ -81,17 +77,6 @@ export default class CorrelationIds {
     return this.ids
   }
 
-  toHeaderKey(key: string): string {
-    const suffix = caseSplit(key)
-      .map(s => s.toLowerCase())
-      .join('-')
-    return `${this.opts.headerPrefix}-${suffix}`
-  }
-
-  toLogKey(key: string): string {
-    return `${this.opts.logPrefix}${capFirst(key)}`
-  }
-
   getLogs(): IdMap {
     const out: IdMap = {}
     for (const [key, val] of Object.entries<string>(this.ids)) {
@@ -106,5 +91,21 @@ export default class CorrelationIds {
       out[this.toHeaderKey(key)] = val
     }
     return out
+  }
+
+  private toHeaderKey(key: string): string {
+    const suffix = caseSplit(key)
+      .map(s => s.toLowerCase())
+      .map(s => capFirst(s))
+      .join('-')
+    return `${this.opts.headerPrefix}-${suffix}`
+  }
+
+  private toLogKey(key: string): string {
+    return `${this.opts.logPrefix}${capFirst(key)}`
+  }
+
+  private fixup(str: string): string {
+    return uncapFirst(str)
   }
 }

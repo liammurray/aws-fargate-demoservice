@@ -57,9 +57,9 @@ describe('corrlelationIds (methods)', function () {
     ids.put(input)
     const output = ids.getHeaders()
     expect(output).to.eql({
-      'nod15c-cid-trace': 'abc',
-      'nod15c-cid-hip-hop': 'xyz',
-      'nod15c-cid-jimmy-jam': 'xtc',
+      'Nod15c-Id-Trace': 'abc',
+      'Nod15c-Id-Hip-Hop': 'xyz',
+      'Nod15c-Id-Jimmy-Jam': 'xtc',
     })
   })
 
