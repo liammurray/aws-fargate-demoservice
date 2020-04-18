@@ -2,12 +2,13 @@ import * as cdk from '@aws-cdk/core'
 import * as ec2 from '@aws-cdk/aws-ec2'
 import * as ecs from '@aws-cdk/aws-ecs'
 import * as ecr from '@aws-cdk/aws-ecr'
-import * as ecs_patterns from '@aws-cdk/aws-ecs-patterns'
+import * as EcsPatterns from '@aws-cdk/aws-ecs-patterns'
 import * as certman from '@aws-cdk/aws-certificatemanager'
 import * as elbv2 from '@aws-cdk/aws-elasticloadbalancingv2'
 import * as route53 from '@aws-cdk/aws-route53'
 import * as iam from '@aws-cdk/aws-iam'
 import * as logs from '@aws-cdk/aws-logs'
+import { pathToFileURL } from 'url'
 
 export interface FargateServiceStackProps extends cdk.StackProps {
   readonly certId: string
@@ -47,7 +48,7 @@ export default class FargateServiceStack extends cdk.Stack {
     // Creates:
     //   ALB, target group, ecs cluster service, route53 entries, etc.
     //
-    const pat = new ecs_patterns.ApplicationLoadBalancedFargateService(this, 'demoService', {
+    const pat = new EcsPatterns.ApplicationLoadBalancedFargateService(this, 'demoService', {
       cluster: cluster,
       publicLoadBalancer: true,
       certificate,
@@ -73,8 +74,26 @@ export default class FargateServiceStack extends cdk.Stack {
       },
     })
 
+    this.addTracing(pat)
+
     pat.targetGroup.configureHealthCheck({
       path: '/v1/healthcheck',
+    })
+  }
+
+  private addTracing(pat) {
+    const taskDef = pat.taskDefinition
+
+    const xrayContainer = taskDef.addContainer('xray-daemon', {
+      image: ecs.ContainerImage.fromRegistry('amazon/aws-xray-daemon'),
+      cpu: 32,
+      memoryReservationMiB: 256,
+    })
+
+    xrayContainer.addPortMappings({
+      hostPort: 0,
+      containerPort: 2000,
+      protocol: 'udp',
     })
   }
 
@@ -84,9 +103,17 @@ export default class FargateServiceStack extends cdk.Stack {
     const executionRole = new iam.Role(this, 'taskExecutionRole', {
       assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
     })
-    //aws iam list-policies --scope AWS --query 'Policies[].PolicyName' | grep ECS
+
+    // CLI:
+    //    aws iam list-policies --scope AWS --query 'Policies[].PolicyName' | grep ECS
+    // Console:
+    //    https://console.aws.amazon.com/iam/home?#/policies
+    //
     executionRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy')
+    )
+    executionRole.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('AWSXRayDaemonWriteAccess')
     )
     return executionRole
   }
