@@ -45,6 +45,7 @@ function setDefaultHeadersMiddleware(req: Request, res: Response, next): void {
 
 const app = express()
 
+app.disable('x-powered-by')
 app.use(initClsMiddleware)
 app.use(xray.express.openSegment(envStr('SERVICE_NAME')))
 app.use(setDefaultHeadersMiddleware)

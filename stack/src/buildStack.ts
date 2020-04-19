@@ -2,8 +2,8 @@ import * as cdk from '@aws-cdk/core'
 import * as ecr from '@aws-cdk/aws-ecr'
 import { Duration } from '@aws-cdk/core'
 import * as CodeBuild from '@aws-cdk/aws-codebuild'
-//import * as CodePipeline from '@aws-cdk/aws-codepipeline'
-//import * as CodePipelineActions from '@aws-cdk/aws-codepipeline-actions'
+import * as CodePipeline from '@aws-cdk/aws-codepipeline'
+import * as CodePipelineActions from '@aws-cdk/aws-codepipeline-actions'
 import * as ssm from '@aws-cdk/aws-ssm'
 import * as iam from '@aws-cdk/aws-iam'
 
@@ -101,18 +101,99 @@ export default class BuildStack extends cdk.Stack {
       })
     )
 
-    // const pipeline = new codepipeline.Pipeline(this, 'MyPipeline')
-    // const sourceOutput = new codepipeline.Artifact()
-    // const sourceAction = new codepipeline_actions.EcrSourceAction({
-    //   actionName: 'ECR',
-    //   repository: ecrRepository,
-    //   imageTag: 'some-tag', // optional, default: 'latest'
-    //   output: sourceOutput,
+    this.addPipeline(repo)
+  }
+
+  private addPipeline(repo: ecr.Repository): CodePipeline.Pipeline {
+    const pipeline = new CodePipeline.Pipeline(this, 'DemoservicePipeline', {
+      pipelineName: 'DemoService',
+      restartExecutionOnUpdate: true,
+    })
+
+    const ecrSourceOutput = new CodePipeline.Artifact('ecr')
+    const ecrSourceAction = new CodePipelineActions.EcrSourceAction({
+      actionName: 'ECR',
+      repository: repo,
+      imageTag: 'latest',
+      output: ecrSourceOutput,
+    })
+
+    // TODO
+    //   1) Add stack source action
+    //   2) Add extraInputs to build
+    //   3) Update buildDeployDevStackProject to cd to CODEBUILD_SRC_DIR_stack
+    //   4) Add changeset and execute
+
+    // Need this source to run CDK synth
+    //
+    // const stackSourceOutput = new CodePipeline.Artifact('stack')
+    // const stackSourceAction = new CodePipelineActions.GitHubSourceAction({
+    //   actionName: 'Stack',
+    //   owner: owner,
+    //   repo: props.repoTools,
+    //   oauthToken,
+    //   output: outputTools,
+    //   branch: 'master',
+    //   trigger: CodePipelineActions.GitHubTrigger.NONE,
     // })
-    // pipeline.addStage({
-    //   stageName: 'Source',
-    //   actions: [sourceAction],
-    // })
+
+    // Where cdk synth output goes
+    const outputSynth = new CodePipeline.Artifact('synthOutput')
+
+    // Trigger from ECR push (for latest)
+    //
+    pipeline.addStage({
+      stageName: 'Source',
+      //actions: [ecrSourceAction, stackSourceAction],
+      actions: [ecrSourceAction],
+    })
+
+    // Run cdk synth command to generate cfn template(s) to deploy
+    //
+    const buildDeployDevStackProject = new CodeBuild.PipelineProject(this, 'CdkBuildProject', {
+      projectName: 'DemoServiceMasterCdkSynth',
+      description: 'Runs CDK commands to generate cfn templates for deploy',
+      environment: {
+        buildImage: CodeBuild.LinuxBuildImage.STANDARD_4_0,
+      },
+      buildSpec: CodeBuild.BuildSpec.fromObject({
+        version: '0.2',
+        phases: {
+          install: {
+            commands: ['echo $IMAGE_URI', 'cd cdk', 'npm install'],
+          },
+          build: {
+            commands: ['npm run build', 'npm run cdk synth demoservice-service -- -o .'],
+          },
+        },
+        artifacts: {
+          'base-directory': 'cdk.out',
+          files: 'demoservice-service.template.json',
+        },
+      }),
+    })
+
+    const actionBuild = new CodePipelineActions.CodeBuildAction({
+      actionName: 'CdkDeployTemplateBuild',
+      environmentVariables: {
+        IMAGE_URI: {
+          value: ecrSourceAction.variables.imageUri,
+        },
+      },
+      project: buildDeployDevStackProject,
+      input: ecrSourceOutput,
+      // extraInputs: [
+      //   // CODEBUILD_SRC_DIR_stack
+      //   stackSourceOutput,
+      // ],
+      outputs: [outputSynth],
+    })
+
+    pipeline.addStage({
+      stageName: 'Build',
+      actions: [actionBuild],
+    })
+    return pipeline
   }
 
   private addRepo(repositoryName: string): ecr.Repository {

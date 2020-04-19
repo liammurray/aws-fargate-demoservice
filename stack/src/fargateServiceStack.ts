@@ -19,6 +19,7 @@ export interface FargateServiceStackProps extends cdk.StackProps {
   readonly dnsName: string
   readonly domainApex: string
   readonly serviceName: string
+  readonly stage: 'dev' | 'live'
 }
 
 const XRAY_NAME = 'xray-daemon'
@@ -31,7 +32,6 @@ export default class FargateServiceStack extends cdk.Stack {
   constructor(scope: cdk.Construct, id: string, props: FargateServiceStackProps) {
     super(scope, id, props)
 
-    // Lookups (we could pass from other stack too)
     const logGroup = logs.LogGroup.fromLogGroupArn(
       this,
       'LogGroup',
@@ -49,6 +49,7 @@ export default class FargateServiceStack extends cdk.Stack {
     })
 
     const cluster = new ecs.Cluster(this, 'demoCluster', {
+      clusterName: `demoService-${props.stage}`,
       vpc,
     })
 
@@ -79,7 +80,7 @@ export default class FargateServiceStack extends cdk.Stack {
       memoryLimitMiB: 2048,
       cpu: 512,
       desiredCount: 2,
-      serviceName: 'demoService-dev',
+      serviceName: 'demoService',
       taskImageOptions: {
         containerName: 'web',
         containerPort: 3005,
@@ -87,7 +88,7 @@ export default class FargateServiceStack extends cdk.Stack {
         taskRole,
         environment: {
           DEPLOY_DATE: new Date().toLocaleString(),
-          AWS_XRAY_TRACING_NAME: 'demoservice',
+          //AWS_XRAY_TRACING_NAME: 'demoservice',
         },
         image: ecs.ContainerImage.fromEcrRepository(repository),
         logDriver: new ecs.AwsLogDriver({

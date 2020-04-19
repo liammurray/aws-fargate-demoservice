@@ -11,9 +11,10 @@ test('Empty Stack', () => {
       account: 'xyz',
     },
     certId: 'bf2794b2-e3d6-45cc-a849-f7add37d76d0',
-    dnsName: 'demoservice.nod15c.com',
+    dnsName: 'demoservice-dev.nod15c.com',
     domainApex: 'nod15c.com.',
     serviceName: 'demoservice',
+    stage: 'dev',
   })
   // THEN
   expectCDK(stack).to(

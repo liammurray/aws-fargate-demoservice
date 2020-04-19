@@ -28,6 +28,7 @@ getCallerAccount().then(account => {
 
   try {
     // Builds and deploys OrdersAPI from master branch
+    // This provides pipeline that builds and deploys automatically
     //
     new BuildStack(app, 'demoservice-build', {
       branch: 'master',
@@ -38,13 +39,15 @@ getCallerAccount().then(account => {
     })
 
     /**
-     * Stack for service in VPC
+     * Stack for service in VPC (dev stage)
+     * TODO: move values below to SSM
      */
     new FargateServiceStack(app, 'demoservice-service', {
       certId: 'bf2794b2-e3d6-45cc-a849-f7add37d76d0',
-      dnsName: 'demoservice.nod15c.com',
+      dnsName: 'demoservice-dev.nod15c.com',
       domainApex: 'nod15c.com.',
       serviceName: 'demoservice',
+      stage: 'dev',
       env,
     })
   } catch (e) {
