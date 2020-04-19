@@ -8,7 +8,7 @@ export const v1 = Router()
 v1.use('/orders', orders)
 
 v1.get('/healthcheck', (_req, res) => {
-  ctx.logger.info('healthcheck')
+  // ctx.logger.info('healthcheck')
   res.status(200).json({ uptime: process.uptime() })
 })
 

@@ -78,15 +78,15 @@ export default class FargateServiceStack extends cdk.Stack {
       protocol: elbv2.ApplicationProtocol.HTTPS,
       memoryLimitMiB: 2048,
       cpu: 512,
-      desiredCount: 1,
-      // Uses awslogs as default
+      desiredCount: 2,
+      serviceName: 'demoService-dev',
       taskImageOptions: {
+        containerName: 'web',
         containerPort: 3005,
         executionRole,
         taskRole,
         environment: {
           DEPLOY_DATE: new Date().toLocaleString(),
-          // This overrides default
           AWS_XRAY_TRACING_NAME: 'demoservice',
         },
         image: ecs.ContainerImage.fromEcrRepository(repository),
