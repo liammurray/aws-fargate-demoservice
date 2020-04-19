@@ -1,3 +1,5 @@
+[![codebuild](https://codebuild.us-west-2.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiYWVIMThIUkN4NmhRTW9nbU01U2N1c212d1BoeUpRWHhTaktlekIwTFlRV2RiZk4yelF0WGJmVTRsNXBrUEJIVlhFWDNRcDVJSGcvR3B6OC9HY01nVmRJPSIsIml2UGFyYW1ldGVyU3BlYyI6InIwRzlKQWdHZFZBK1JHSUciLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=master)](https://us-west-2.console.aws.amazon.com/codebuild/home?region=us-west-2#/projects/DemoServiceMaster/view)
+
 # Demoservice
 
 Simple demo service built using Node.js and Express.
