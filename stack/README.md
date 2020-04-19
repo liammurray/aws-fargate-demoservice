@@ -49,3 +49,9 @@ cd ./service/docker
 aws ecr describe-repositories
 aws logs describe-log-groups --query 'logGroups[].logGroupName' | grep 'services'
 ```
+
+### TODO
+
+Notifcation rule
+Report build status not working
+Build conditions to start build based on file path

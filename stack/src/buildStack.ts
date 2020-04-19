@@ -29,20 +29,12 @@ export default class BuildStack extends cdk.Stack {
     super(scope, id, props)
 
     this.props = props
-
-    this.addRepos()
     this.addCodeBuild()
   }
 
-  private addRepos(): void {
-    const repos = ['demoservice']
-
-    for (const repo of repos) {
-      this.addRepo(repo)
-    }
-  }
-
   private addCodeBuild(): void {
+    const repo = this.addRepo('demoservice')
+
     // const repo = ssm.StringParameter.valueForStringParameter(this, this.props.repo)
     const owner = ssm.StringParameter.valueForStringParameter(this, this.props.user)
 
@@ -85,6 +77,12 @@ export default class BuildStack extends cdk.Stack {
       buildSpec: CodeBuild.BuildSpec.fromSourceFilename('buildspec.yml'),
     })
 
+    buildProject.role?.addManagedPolicy(
+      iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryReadOnly')
+    )
+
+    repo.grantPullPush(buildProject)
+
     const ssmPath = `arn:aws:ssm:${this.region}:${this.account}:parameter/cicd/demoservice/*`
 
     // Allow build to read SSM parameter
@@ -110,7 +108,7 @@ export default class BuildStack extends cdk.Stack {
     // })
   }
 
-  private addRepo(repositoryName: string): void {
+  private addRepo(repositoryName: string): ecr.Repository {
     const repository = new ecr.Repository(this, repositoryName, {
       repositoryName,
     })
@@ -127,5 +125,7 @@ export default class BuildStack extends cdk.Stack {
     }
     repository.addLifecycleRule(expireRule)
     repository.addLifecycleRule(maxCountRule)
+
+    return repository
   }
 }
