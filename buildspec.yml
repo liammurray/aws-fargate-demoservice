@@ -13,10 +13,9 @@ phases:
       nodejs: 12
   pre_build:
     commands:
-      - REPO="${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com"
       - PASSWORD=$(aws ecr get-login-password)
-      - echo $PASSWORD | docker login --password-stdin --username AWS $REPO
-      - echo Logged into $REPO
+      - echo $PASSWORD | docker login --password-stdin --username AWS $IMAGE_REPO
+      - echo Logged into $IMAGE_REPO
   build:
     commands:
       - cd ./service
@@ -36,6 +35,6 @@ phases:
       - |
         if [ $CODEBUILD_BUILD_SUCCEEDING -eq 1 ]; then
           echo "Pushing to ECR"
-          docker push ${REPO}/${IMAGE_NAME}:${IMAGE_TAG}
+          docker push ${IMAGE_REPO}/${IMAGE_NAME}:${IMAGE_TAG}
         fi
 

@@ -67,14 +67,14 @@ export default class BuildStack extends cdk.Stack {
           type: CodeBuild.BuildEnvironmentVariableType.PLAINTEXT,
           value: this.props.npmtoken,
         },
+        IMAGE_NAME: {
+          value: 'demoservice',
+        },
         IMAGE_TAG: {
           value: 'latest',
         },
-        AWS_ACCOUNT: {
-          value: this.account,
-        },
-        IMAGE_NAME: {
-          value: 'demoservice',
+        IMAGE_REPO: {
+          value: `${this.account}.dkr.ecr.${this.region}.amazonaws.com`,
         },
       },
       buildSpec: CodeBuild.BuildSpec.fromSourceFilename('buildspec.yml'),

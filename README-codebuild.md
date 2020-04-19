@@ -77,5 +77,5 @@ See [codebuild local builds gitrepo](https://github.com/aws/aws-codebuild-docker
 
     ```bash
     NPM_TOKEN_PARAM_KEY=/cicd/demoservice/github/npmtoken
-    AWS_ACCOUNT=<account>
+    IMAGE_REPO=${account}.dkr.ecr.${region}.amazonaws.com
     ```
