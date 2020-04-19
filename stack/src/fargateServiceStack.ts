@@ -10,7 +10,6 @@ import * as route53 from '@aws-cdk/aws-route53'
 import * as iam from '@aws-cdk/aws-iam'
 import { Fn } from '@aws-cdk/core'
 import * as logs from '@aws-cdk/aws-logs'
-import { NetworkMode } from '@aws-cdk/aws-ecs'
 
 /**
  * Fargate service
