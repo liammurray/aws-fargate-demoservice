@@ -1,12 +1,13 @@
 import express, { Request, Response, NextFunction } from 'express'
 import { v4 as uuid } from 'uuid'
-import { envPort, envStr } from './util/env'
+import { envStr } from './util/env'
 import { v1 } from './routes'
 import ctx from './globals'
 import bodyParser from 'body-parser'
 import HttpStatus from 'http-status-codes'
 import { instrumentGlobalHttps } from './instrumentation/hookHttp'
 import xray from 'aws-xray-sdk'
+import { annotateCurrentSegment } from './instrumentation/xrayUtil'
 
 if (ctx.config.hookGlobalHttp) {
   ctx.logger.info('Enabling HTTP global instrumentation')
@@ -18,7 +19,7 @@ xray.setLogger(ctx.logger)
 xray.enableAutomaticMode()
 xray.setContextMissingStrategy('LOG_ERROR')
 
-function initClsMiddleware(req: Request, res: Response, next): void {
+function initClsMiddleware(req: Request, res: Response, next: NextFunction): void {
   ctx.run(
     () => {
       // TODO capture ids
@@ -28,6 +29,13 @@ function initClsMiddleware(req: Request, res: Response, next): void {
     },
     { emitters: [req, res] }
   )
+}
+
+function addAnnotationsMiddleware(_req: Request, res: Response, next: NextFunction): void {
+  res.once('finish', () => {
+    annotateCurrentSegment(ctx.correlationIds.getLogs())
+  })
+  next()
 }
 
 function setDefaultHeadersMiddleware(req: Request, res: Response, next): void {
@@ -47,7 +55,9 @@ const app = express()
 
 app.disable('x-powered-by')
 app.use(initClsMiddleware)
+// AWS_XRAY_TRACING_NAME can be set in environment to override this
 app.use(xray.express.openSegment(envStr('SERVICE_NAME')))
+app.use(addAnnotationsMiddleware)
 app.use(setDefaultHeadersMiddleware)
 app.use(bodyParser.json())
 
