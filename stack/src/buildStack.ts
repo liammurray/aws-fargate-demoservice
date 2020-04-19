@@ -70,6 +70,9 @@ export default class BuildStack extends cdk.Stack {
         IMAGE_TAG: {
           value: 'latest',
         },
+        AWS_ACCOUNT: {
+          value: this.account,
+        },
         IMAGE_NAME: {
           value: 'demoservice',
         },

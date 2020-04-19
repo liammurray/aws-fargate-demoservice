@@ -53,5 +53,5 @@ aws logs describe-log-groups --query 'logGroups[].logGroupName' | grep 'services
 ### TODO
 
 Notifcation rule
-Report build status not working
-Build conditions to start build based on file path
+https://docs.aws.amazon.com/cdk/api/latest/docs/@aws-cdk_aws-codebuild.FilterGroup.html
+Build conditions to start build based on file path (FilterGroup)
