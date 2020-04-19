@@ -59,6 +59,8 @@ export default class BuildStack extends cdk.Stack {
       environment: {
         buildImage: CodeBuild.LinuxBuildImage.STANDARD_4_0,
         computeType: CodeBuild.ComputeType.SMALL,
+        // Needed to run docker build
+        privileged: true,
       },
       badge: true,
       environmentVariables: {
