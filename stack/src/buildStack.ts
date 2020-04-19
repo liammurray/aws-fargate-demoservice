@@ -5,7 +5,7 @@ import * as CodeBuild from '@aws-cdk/aws-codebuild'
 //import * as CodePipeline from '@aws-cdk/aws-codepipeline'
 //import * as CodePipelineActions from '@aws-cdk/aws-codepipeline-actions'
 import * as ssm from '@aws-cdk/aws-ssm'
-//import * as iam from '@aws-cdk/aws-iam'
+import * as iam from '@aws-cdk/aws-iam'
 
 export interface BuildStackProps extends cdk.StackProps {
   readonly user: string
@@ -60,7 +60,8 @@ export default class BuildStack extends cdk.Stack {
       ],
     })
 
-    new CodeBuild.Project(this, 'DemoService', {
+    const buildProject = new CodeBuild.Project(this, 'DemoService', {
+      projectName: 'DemoServiceMaster',
       description: 'Builds DemoService image and pushes to ECR',
       source,
       environment: {
@@ -83,6 +84,17 @@ export default class BuildStack extends cdk.Stack {
       },
       buildSpec: CodeBuild.BuildSpec.fromSourceFilename('buildspec.yml'),
     })
+
+    const ssmPath = `arn:aws:ssm:${this.region}:${this.account}:parameter/cicd/demoservice/*`
+
+    // Allow build to read SSM parameter
+    buildProject.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['ssm:GetParameters'],
+        resources: [ssmPath],
+      })
+    )
 
     // const pipeline = new codepipeline.Pipeline(this, 'MyPipeline')
     // const sourceOutput = new codepipeline.Artifact()
