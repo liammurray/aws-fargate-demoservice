@@ -110,6 +110,8 @@ export default class BuildStack extends cdk.Stack {
       restartExecutionOnUpdate: true,
     })
 
+    // TODO Add cloudtrail to capture ECR to make this trigger
+
     const ecrSourceOutput = new CodePipeline.Artifact('ecr')
     const ecrSourceAction = new CodePipelineActions.EcrSourceAction({
       actionName: 'ECR',
