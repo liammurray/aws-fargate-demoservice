@@ -48,7 +48,9 @@ export default class BuildStack extends cdk.Stack {
       reportBuildStatus: true,
       webhook: true,
       webhookFilters: [
-        CodeBuild.FilterGroup.inEventOf(CodeBuild.EventAction.PUSH).andBranchIs(this.props.branch), //.andFilePathIs('service/.*')
+        CodeBuild.FilterGroup.inEventOf(CodeBuild.EventAction.PUSH)
+          .andBranchIs(this.props.branch)
+          .andFilePathIs('service/.*'),
       ],
     })
 

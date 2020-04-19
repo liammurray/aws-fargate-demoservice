@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/camelcase */
 import * as cdk from '@aws-cdk/core'
 import * as ec2 from '@aws-cdk/aws-ec2'
 import * as ecs from '@aws-cdk/aws-ecs'
@@ -9,6 +10,7 @@ import * as route53 from '@aws-cdk/aws-route53'
 import * as iam from '@aws-cdk/aws-iam'
 import { Fn } from '@aws-cdk/core'
 import * as logs from '@aws-cdk/aws-logs'
+import { NetworkMode } from '@aws-cdk/aws-ecs'
 
 /**
  * Fargate service
@@ -19,6 +21,9 @@ export interface FargateServiceStackProps extends cdk.StackProps {
   readonly domainApex: string
   readonly serviceName: string
 }
+
+const XRAY_NAME = 'xray-daemon'
+const XRAY_PORT = 8000
 
 /**
  * ECS Fargate service running demoservice in its own VPC
@@ -51,6 +56,17 @@ export default class FargateServiceStack extends cdk.Stack {
     const executionRole = this.getTaskExecutionRole()
     const taskRole = this.getTaskRole()
 
+    // const firelensLogDriver = ecs.LogDrivers.firelens({
+    //   options: {
+    //     Name: 'cloudwatch',
+    //     region: this.region,
+    //     log_stream_prefix: 'demoservice',
+    //     log_group_name: logGroup.logGroupName,
+    //     log_format: 'json/emf',
+    //     lok_key: 'log',
+    //   },
+    // })
+
     // Creates:
     //   ALB, target group, ecs cluster service, route53 entries, etc.
     //
@@ -70,7 +86,9 @@ export default class FargateServiceStack extends cdk.Stack {
         executionRole,
         taskRole,
         environment: {
-          DEPLOY_DATE: Date.now().toLocaleString(),
+          DEPLOY_DATE: new Date().toLocaleString(),
+          // This overrides default
+          AWS_XRAY_TRACING_NAME: 'demoservice',
         },
         image: ecs.ContainerImage.fromEcrRepository(repository),
         logDriver: new ecs.AwsLogDriver({
@@ -87,18 +105,38 @@ export default class FargateServiceStack extends cdk.Stack {
     })
   }
 
+  // private addFluentBit(
+  //   pat: EcsPatterns.ApplicationLoadBalancedFargateService,
+  //   logGroup: logs.ILogGroup
+  // ): void {
+  //   const taskDef = pat.taskDefinition
+  //   // "firelensConfiguration": {
+  //   //   "type": "fluentbit"
+  //   // },
+  //   taskDef.addContainer('fluentbit', {
+  //     image: ecs.ContainerImage.fromRegistry('amazon/aws-for-fluent-bit:2.2.0'),
+  //     cpu: 0,
+  //     memoryLimitMiB: 256,
+  //     logging: ecs.LogDrivers.awsLogs({
+  //       streamPrefix: 'fluentbit/demoservice',
+  //       logGroup,
+  //     }),
+  //   })
+  // }
+
   private addTracing(pat: EcsPatterns.ApplicationLoadBalancedFargateService): void {
     const taskDef = pat.taskDefinition
 
-    const xrayContainer = taskDef.addContainer('xray-daemon', {
+    const xrayContainer = taskDef.addContainer(XRAY_NAME, {
       image: ecs.ContainerImage.fromRegistry('amazon/aws-xray-daemon'),
       cpu: 32,
       memoryReservationMiB: 256,
     })
 
+    // https://docs.aws.amazon.com/xray/latest/devguide/xray-daemon-ecs.html
+    // Fargate is always awsvpc
     xrayContainer.addPortMappings({
-      hostPort: 2000,
-      containerPort: 2000,
+      containerPort: XRAY_PORT,
       protocol: ecs.Protocol.UDP,
     })
   }
@@ -117,9 +155,6 @@ export default class FargateServiceStack extends cdk.Stack {
     //
     executionRole.addManagedPolicy(
       iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy')
-    )
-    executionRole.addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName('AWSXRayDaemonWriteAccess')
     )
     return executionRole
   }
@@ -144,6 +179,7 @@ export default class FargateServiceStack extends cdk.Stack {
         actions: ['ssm:Get*'],
       })
     )
+    role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AWSXRayDaemonWriteAccess'))
     return role
   }
 }
