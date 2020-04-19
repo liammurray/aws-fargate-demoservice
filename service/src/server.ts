@@ -54,10 +54,10 @@ function setDefaultHeadersMiddleware(req: Request, res: Response, next): void {
 const app = express()
 
 app.disable('x-powered-by')
+app.use(addAnnotationsMiddleware)
 app.use(initClsMiddleware)
 // AWS_XRAY_TRACING_NAME can be set in environment to override this
 app.use(xray.express.openSegment(envStr('SERVICE_NAME')))
-app.use(addAnnotationsMiddleware)
 app.use(setDefaultHeadersMiddleware)
 app.use(bodyParser.json())
 

@@ -8,15 +8,14 @@ export type SegmentAnnotations = {
 
 export function annotateSegment(segment: SegmentLike, annotations: SegmentAnnotations): void {
   for (const [key, value] of Object.entries(annotations)) {
-    if (value != undefined) {
-      segment.addAnnotation(key, value)
-    }
+    segment.addAnnotation(key, value)
   }
 }
 
 export function annotateCurrentSegment(annotations: SegmentAnnotations): void {
   const seg = xray.getSegment()
   if (seg) {
+    ctx.logger.info('Adding annotations)')
     annotateSegment(seg, annotations)
   } else {
     ctx.logger.info('No segment (failed to annotate)')
