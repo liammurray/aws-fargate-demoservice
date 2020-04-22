@@ -10,14 +10,15 @@ import * as route53 from '@aws-cdk/aws-route53'
 import * as iam from '@aws-cdk/aws-iam'
 import { Fn } from '@aws-cdk/core'
 import * as logs from '@aws-cdk/aws-logs'
+// import * as ssm from '@aws-cdk/aws-ssm'
 
 /**
  * Fargate service
  */
 export interface FargateServiceStackProps extends cdk.StackProps {
   readonly certId: string
-  readonly dnsName: string
-  readonly domainApex: string
+  readonly dnsPrefix: string
+  readonly domain: string
   readonly serviceName: string
   readonly stage: 'dev' | 'live'
 }
@@ -37,11 +38,15 @@ export default class FargateServiceStack extends cdk.Stack {
       'LogGroup',
       Fn.importValue('ServicesLogGroupArn')
     )
+
+    const domainApex = `${props.domain}.`
+    const dnsName = `${props.dnsPrefix}.${props.domain}`
+
     const repository = ecr.Repository.fromRepositoryName(this, 'repo', props.serviceName)
     const regionCertArn = `arn:aws:acm:${this.region}:${this.account}:certificate/${props.certId}`
     const certificate = certman.Certificate.fromCertificateArn(this, 'albCert', regionCertArn)
     const domainZone = route53.HostedZone.fromLookup(this, 'zone', {
-      domainName: props.domainApex,
+      domainName: domainApex,
     })
 
     const vpc = new ec2.Vpc(this, 'demoVpc', {
@@ -74,7 +79,7 @@ export default class FargateServiceStack extends cdk.Stack {
       cluster: cluster,
       publicLoadBalancer: true,
       certificate,
-      domainName: props.dnsName,
+      domainName: dnsName,
       domainZone,
       protocol: elbv2.ApplicationProtocol.HTTPS,
       memoryLimitMiB: 2048,

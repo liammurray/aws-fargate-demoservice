@@ -4,6 +4,7 @@ import * as cdk from '@aws-cdk/core'
 import * as aws from 'aws-sdk'
 import BuildStack from './buildStack'
 import FargateServiceStack from './fargateServiceStack'
+import { getStringParams } from './util'
 
 const app = new cdk.App()
 
@@ -16,7 +17,7 @@ export async function getCallerAccount(): Promise<string> {
   return data.Account
 }
 
-getCallerAccount().then(account => {
+getCallerAccount().then(async account => {
   const env = {
     account,
     region: 'us-west-2',
@@ -26,31 +27,33 @@ getCallerAccount().then(account => {
    * Creates common loggroup and ECR repos for services
    */
 
-  try {
-    // Builds and deploys OrdersAPI from master branch
-    // This provides pipeline that builds and deploys automatically
-    //
-    new BuildStack(app, 'demoservice-build', {
-      branch: 'master',
-      repo: '/cicd/demoservice/github/repo',
-      user: '/cicd/demoservice/github/owner',
-      npmtoken: '/cicd/demoservice/github/npmtoken',
-      env,
-    })
+  // Builds and deploys OrdersAPI from master branch
+  // This provides pipeline that builds and deploys automatically
+  //
+  new BuildStack(app, 'demoservice-build', {
+    branch: 'master',
+    repo: '/cicd/demoservice/github/repo',
+    user: '/cicd/common/github/owner',
+    npmtoken: '/cicd/common/github/npmtoken',
+    env,
+  })
 
-    /**
-     * Stack for service in VPC (dev stage)
-     * TODO: move values below to SSM
-     */
-    new FargateServiceStack(app, 'demoservice-service', {
-      certId: 'bf2794b2-e3d6-45cc-a849-f7add37d76d0',
-      dnsName: 'demoservice-dev.nod15c.com',
-      domainApex: 'nod15c.com.',
-      serviceName: 'demoservice',
-      stage: 'dev',
-      env,
-    })
-  } catch (e) {
-    console.log(e)
-  }
+  // We need to resolve these params during synth (since used in string substitutions)
+  const [certId, domain] = await getStringParams(
+    '/cicd/common/certs/us-west-2',
+    '/cicd/common/domain'
+  )
+
+  /**
+   * Stack for service in VPC (dev stage)
+   * TODO: move values below to SSM
+   */
+  return new FargateServiceStack(app, 'demoservice-service', {
+    certId,
+    domain,
+    dnsPrefix: 'demoservice-dev',
+    serviceName: 'demoservice',
+    stage: 'dev',
+    env,
+  })
 })

@@ -4,9 +4,7 @@
 
 Account global stack should be created first. (Creates common services log group and sets up codebuild token for account.)
 
-SSM params and SystemManager secrets (see paths in CDK code)
-
-There are some values in main.ts (will be moved to SSM)
+SSM params and SystemManager secrets (see paths in CDK code in main.ts)
 
 ### Deploy build environment (demoservice-build)
 
@@ -14,7 +12,7 @@ This creates:
 
 - ECR repo for demoservice
 - CodeBuild project that builds and pushes to ECR on push to master branch. Triggered by path changes under 'service'.
-- CodePipeline that deploys when ECR image is pushed
+- CodePipeline that deploys when ECR image is pushed.
 
 ```bash
 cdk deploy demoservice-build
@@ -28,7 +26,7 @@ If the pipeline runs it will deploy (or update) the `demoservice-service` stack.
 
 Creates VPC, ALB, NAT gateway, Fargate ECS cluster and service with task definition.
 
-Warning: the resources are a bit pricey so don't leave running for days unused.
+Warning: the resources are a bit pricey so don't leave running for days unused. ($16/month for alb, $32/month for nat, fargate tasks, etc.)
 
 ```bash
 cdk deploy demoservice
@@ -67,4 +65,5 @@ aws logs describe-log-groups --query 'logGroups[].logGroupName' | grep 'services
 
 Notification rule
 Move values in code to SSM and document
-Pipeline
+Finish pipeline deploy stage
+Create trail in global stack and test ECR trigger

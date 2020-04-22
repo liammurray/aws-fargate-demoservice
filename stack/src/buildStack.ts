@@ -14,6 +14,8 @@ export interface BuildStackProps extends cdk.StackProps {
   readonly npmtoken: string
 }
 
+const ssmVal = ssm.StringParameter.valueForStringParameter
+
 /**
  *
  * ECR Repo for demoservice image
@@ -33,17 +35,17 @@ export default class BuildStack extends cdk.Stack {
   }
 
   private addCodeBuild(): void {
-    const repo = this.addRepo('demoservice')
+    const imageRepo = this.addRepo('demoservice')
 
-    // const repo = ssm.StringParameter.valueForStringParameter(this, this.props.repo)
-    const owner = ssm.StringParameter.valueForStringParameter(this, this.props.user)
+    const srcRepo = ssmVal(this, this.props.repo)
+    const owner = ssmVal(this, this.props.user)
 
     // Note: github token is created in account for CodeBuild (created in another global stack for account)
 
     // Trigger when push to branch occurs
     const source = CodeBuild.Source.gitHub({
       owner,
-      repo: 'aws-fargate-demoservice',
+      repo: srcRepo,
       cloneDepth: 1,
       reportBuildStatus: true,
       webhook: true,
@@ -88,7 +90,7 @@ export default class BuildStack extends cdk.Stack {
       iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonEC2ContainerRegistryReadOnly')
     )
 
-    repo.grantPullPush(buildProject)
+    imageRepo.grantPullPush(buildProject)
 
     const ssmPath = `arn:aws:ssm:${this.region}:${this.account}:parameter/cicd/demoservice/*`
 
@@ -101,10 +103,10 @@ export default class BuildStack extends cdk.Stack {
       })
     )
 
-    this.addPipeline(repo)
+    this.addPipeline(imageRepo)
   }
 
-  private addPipeline(repo: ecr.Repository): CodePipeline.Pipeline {
+  private addPipeline(imageRepo: ecr.Repository): CodePipeline.Pipeline {
     const pipeline = new CodePipeline.Pipeline(this, 'DemoservicePipeline', {
       pipelineName: 'DemoService',
       restartExecutionOnUpdate: true,
@@ -115,7 +117,7 @@ export default class BuildStack extends cdk.Stack {
     const ecrSourceOutput = new CodePipeline.Artifact('ecr')
     const ecrSourceAction = new CodePipelineActions.EcrSourceAction({
       actionName: 'ECR',
-      repository: repo,
+      repository: imageRepo,
       imageTag: 'latest',
       output: ecrSourceOutput,
     })

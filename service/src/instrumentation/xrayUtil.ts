@@ -15,7 +15,7 @@ export function annotateSegment(segment: SegmentLike, annotations: SegmentAnnota
 export function annotateCurrentSegment(annotations: SegmentAnnotations): void {
   const seg = xray.getSegment()
   if (seg) {
-    ctx.logger.info('Adding annotations)')
+    // ctx.logger.info('Adding annotations')
     annotateSegment(seg, annotations)
   } else {
     ctx.logger.info('No segment (failed to annotate)')
