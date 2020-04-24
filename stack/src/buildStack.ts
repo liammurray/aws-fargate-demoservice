@@ -127,10 +127,8 @@ export default class BuildStack extends cdk.Stack {
     owner: string,
     oauthToken: cdk.SecretValue
   ): CodePipeline.Pipeline {
-    const serviceName = 'DemoService'
-
     const pipeline = new CodePipeline.Pipeline(this, 'DeployPipeline', {
-      pipelineName: `${serviceName}Master`,
+      pipelineName: `DemoServiceMaster`,
       restartExecutionOnUpdate: true,
     })
 
@@ -265,6 +263,7 @@ export default class BuildStack extends cdk.Stack {
   private addRepo(repositoryName: string): ecr.Repository {
     const repository = new ecr.Repository(this, repositoryName, {
       repositoryName,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
     })
 
     const expireRule: ecr.LifecycleRule = {

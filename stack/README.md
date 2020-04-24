@@ -1,18 +1,18 @@
 # Demo service
 
-### Dependencies
+## Dependencies
 
 Account global stack should be created first. (Creates common services log group and sets up codebuild token for account.)
 
 SSM params and SystemManager secrets (see paths in CDK code in main.ts)
 
-### Deploy build environment (demoservice-build)
+## Deploy build environment (demoservice-build)
 
 This creates:
 
 - ECR repo for demoservice
 - CodeBuild project that builds and pushes to ECR on push to master branch. Triggered by path changes under 'service'.
-- CodePipeline that deploys when ECR image is pushed.
+- CodePipeline that deploys ECS cluster. You need to enable a CloudTrail to trigger it (otherwise you can run pipeline manually)
 
 ```bash
 cdk deploy demoservice-build
@@ -22,7 +22,7 @@ At this point you can commit something to `./service`. The webhook should trigge
 
 If the pipeline runs it will deploy (or update) the `demoservice-service` stack.
 
-### Deploy service (demoservice-service)
+## Deploy service (demoservice-service)
 
 Creates VPC, ALB, NAT gateway, Fargate ECS cluster and service with task definition.
 
@@ -44,7 +44,7 @@ When not in use destroy.
 cdk destroy demoservice
 ```
 
-### Manual build and push
+## Manual build and push
 
 Push an image to the repo. This will also trigger a build. You can use this to try out local changes right away in dev.
 
@@ -54,16 +54,9 @@ cd ./service/docker
 ./push.sh
 ```
 
-### Hints
+## Hints
 
 ```bash
 aws ecr describe-repositories
 aws logs describe-log-groups --query 'logGroups[].logGroupName' | grep 'services'
 ```
-
-### TODO
-
-Notification rule
-Move values in code to SSM and document
-Finish pipeline deploy stage
-Create trail in global stack and test ECR trigger
