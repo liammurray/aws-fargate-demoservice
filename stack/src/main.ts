@@ -31,11 +31,14 @@ getCallerAccount().then(async account => {
   // This provides pipeline that builds and deploys automatically
   //
   new BuildStack(app, 'demoservice-build', {
+    env,
     branch: 'master',
     repo: '/cicd/demoservice/github/repo',
     user: '/cicd/common/github/owner',
     npmtoken: '/cicd/common/github/npmtoken',
-    env,
+    codebuildSecret: 'codebuild/github/token',
+    stackNameDev: 'demoservice-dev',
+    stackNameLive: 'demoservice-live',
   })
 
   // We need to resolve these params during synth (since used in string substitutions)
@@ -48,11 +51,11 @@ getCallerAccount().then(async account => {
    * Stack for service in VPC (dev stage)
    */
   return new FargateServiceStack(app, 'demoservice-dev', {
+    env,
     certId,
     domain,
     dnsPrefix: 'demoservice-dev',
     serviceName: 'demoservice',
     stage: 'dev',
-    env,
   })
 })

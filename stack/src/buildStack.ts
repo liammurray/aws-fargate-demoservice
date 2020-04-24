@@ -3,24 +3,33 @@ import * as ecr from '@aws-cdk/aws-ecr'
 import { Duration } from '@aws-cdk/core'
 import * as CodeBuild from '@aws-cdk/aws-codebuild'
 import * as CodePipeline from '@aws-cdk/aws-codepipeline'
+import * as cloudformation from '@aws-cdk/aws-cloudformation'
 import * as CodePipelineActions from '@aws-cdk/aws-codepipeline-actions'
 import * as ssm from '@aws-cdk/aws-ssm'
 import * as iam from '@aws-cdk/aws-iam'
+
+const ssmVal = ssm.StringParameter.valueForStringParameter
 
 export interface BuildStackProps extends cdk.StackProps {
   readonly user: string
   readonly repo: string
   readonly branch: string
   readonly npmtoken: string
+  readonly codebuildSecret: string
+  readonly stackNameDev: string
+  readonly stackNameLive: string
 }
-
-const ssmVal = ssm.StringParameter.valueForStringParameter
 
 /**
  *
- * ECR Repo for demoservice image
- * Codebuild to build and push image
- * Pipeline to deploy
+ * This stack deploys:
+ *
+ *  1) Codebuild project triggered by github webhook (matching ./service) that
+ *     builds and pushes image to ECR.
+ *
+ *  2) CodePipeline to deploy image from ECR.
+ *
+ * Step (2) is manual unless you enable cloudtrail to respond to ECR push
  *
  * See github actions: https://aws.amazon.com/blogs/containers/create-a-ci-cd-pipeline-for-amazon-ecs-with-github-actions-and-aws-codebuild-tests/
  */
@@ -39,6 +48,9 @@ export default class BuildStack extends cdk.Stack {
 
     const srcRepo = ssmVal(this, this.props.repo)
     const owner = ssmVal(this, this.props.user)
+
+    // For github source
+    const oauthToken = cdk.SecretValue.secretsManager(this.props.codebuildSecret)
 
     // Note: github token is created in account for CodeBuild (created in another global stack for account)
 
@@ -103,17 +115,26 @@ export default class BuildStack extends cdk.Stack {
       })
     )
 
-    this.addPipeline(imageRepo)
+    this.addDeployPipeline(imageRepo, srcRepo, owner, oauthToken)
   }
 
-  private addPipeline(imageRepo: ecr.Repository): CodePipeline.Pipeline {
-    const pipeline = new CodePipeline.Pipeline(this, 'DemoservicePipeline', {
-      pipelineName: 'DemoServiceMaster',
+  /**
+   * Adds deployment pipepline
+   */
+  private addDeployPipeline(
+    imageRepo: ecr.Repository,
+    repo: string,
+    owner: string,
+    oauthToken: cdk.SecretValue
+  ): CodePipeline.Pipeline {
+    const serviceName = 'DemoService'
+
+    const pipeline = new CodePipeline.Pipeline(this, 'DeployPipeline', {
+      pipelineName: `${serviceName}Master`,
       restartExecutionOnUpdate: true,
     })
 
-    // TODO Add cloudtrail to capture ECR to make this trigger
-
+    // ECR image
     const ecrSourceOutput = new CodePipeline.Artifact('ecr')
     const ecrSourceAction = new CodePipelineActions.EcrSourceAction({
       actionName: 'ECR',
@@ -122,24 +143,18 @@ export default class BuildStack extends cdk.Stack {
       output: ecrSourceOutput,
     })
 
-    // TODO
-    //   1) Add stack source action
-    //   2) Add extraInputs to build
-    //   3) Update buildDeployDevStackProject to cd to CODEBUILD_SRC_DIR_stack
-    //   4) Add changeset and execute
-
-    // Need this source to run CDK synth
-    //
-    // const stackSourceOutput = new CodePipeline.Artifact('stack')
-    // const stackSourceAction = new CodePipelineActions.GitHubSourceAction({
-    //   actionName: 'Stack',
-    //   owner: owner,
-    //   repo: props.repoTools,
-    //   oauthToken,
-    //   output: outputTools,
-    //   branch: 'master',
-    //   trigger: CodePipelineActions.GitHubTrigger.NONE,
-    // })
+    // GitHub (no webhook)
+    // For CDK synth
+    const srcOutput = new CodePipeline.Artifact('src')
+    const gitHubSourceAction = new CodePipelineActions.GitHubSourceAction({
+      actionName: 'Code',
+      owner,
+      repo,
+      oauthToken,
+      output: srcOutput,
+      trigger: CodePipelineActions.GitHubTrigger.NONE,
+      branch: this.props.branch,
+    })
 
     // Where cdk synth output goes
     const outputSynth = new CodePipeline.Artifact('synthOutput')
@@ -148,9 +163,11 @@ export default class BuildStack extends cdk.Stack {
     //
     pipeline.addStage({
       stageName: 'Source',
-      //actions: [ecrSourceAction, stackSourceAction],
-      actions: [ecrSourceAction],
+      actions: [ecrSourceAction, gitHubSourceAction],
     })
+
+    // See main.ts
+    const deployTemplate = 'demoservice-dev.template.json'
 
     // Run cdk synth command to generate cfn template(s) to deploy
     //
@@ -164,7 +181,7 @@ export default class BuildStack extends cdk.Stack {
         version: '0.2',
         phases: {
           install: {
-            commands: ['echo $IMAGE_URI', 'cd stack', 'npm ci'],
+            commands: ['echo $IMAGE_URI', 'cd $CODEBUILD_SRC_DIR_code/stack', 'npm ci'],
           },
           build: {
             commands: ['npm run build', 'npm run cdk synth demoservice-dev -- -o .'],
@@ -172,7 +189,7 @@ export default class BuildStack extends cdk.Stack {
         },
         artifacts: {
           'base-directory': 'cdk.out',
-          files: 'demoservice-service.template.json',
+          files: deployTemplate,
         },
       }),
     })
@@ -183,13 +200,15 @@ export default class BuildStack extends cdk.Stack {
         IMAGE_URI: {
           value: ecrSourceAction.variables.imageUri,
         },
+        // Not needed for CDK synth unless we install nod15c pacakages
+        NPM_TOKEN_PARAM_KEY: {
+          type: CodeBuild.BuildEnvironmentVariableType.PLAINTEXT,
+          value: this.props.npmtoken,
+        },
       },
       project: buildDeployDevStackProject,
       input: ecrSourceOutput,
-      // extraInputs: [
-      //   // CODEBUILD_SRC_DIR_stack
-      //   stackSourceOutput,
-      // ],
+      extraInputs: [srcOutput],
       outputs: [outputSynth],
     })
 
@@ -197,7 +216,50 @@ export default class BuildStack extends cdk.Stack {
       stageName: 'Build',
       actions: [actionBuild],
     })
+
+    this.addStageDeployDev(pipeline, outputSynth, deployTemplate)
     return pipeline
+  }
+
+  private addStageDeployDev(
+    pipeline: CodePipeline.Pipeline,
+    buildArtifact: CodePipeline.Artifact,
+    deployTemplate: string
+  ): void {
+    const changeSetName = 'DemoServiceDeployDevChangeSet'
+
+    const capabilities = [
+      cloudformation.CloudFormationCapabilities.AUTO_EXPAND,
+      cloudformation.CloudFormationCapabilities.NAMED_IAM,
+    ]
+
+    const changes = new CodePipelineActions.CloudFormationCreateReplaceChangeSetAction({
+      actionName: 'PrepareChanges',
+      stackName: this.props.stackNameDev,
+      changeSetName,
+      capabilities,
+      adminPermissions: true,
+      templatePath: buildArtifact.atPath(deployTemplate),
+      runOrder: 1,
+    })
+
+    const approve = new CodePipelineActions.ManualApprovalAction({
+      actionName: 'ApproveChanges',
+      additionalInformation: 'Approving deploys (or updates) dev ECS cluster',
+      runOrder: 2,
+    })
+
+    const execute = new CodePipelineActions.CloudFormationExecuteChangeSetAction({
+      actionName: 'ExecuteChanges',
+      stackName: this.props.stackNameDev,
+      changeSetName,
+      runOrder: 3,
+    })
+
+    pipeline.addStage({
+      stageName: 'DeployDev',
+      actions: [changes, approve, execute],
+    })
   }
 
   private addRepo(repositoryName: string): ecr.Repository {
