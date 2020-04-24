@@ -164,7 +164,7 @@ export default class BuildStack extends cdk.Stack {
         version: '0.2',
         phases: {
           install: {
-            commands: ['echo $IMAGE_URI', 'cd stack/cdk', 'npm ci'],
+            commands: ['echo $IMAGE_URI', 'cd stack', 'npm ci'],
           },
           build: {
             commands: ['npm run build', 'npm run cdk synth demoservice-dev -- -o .'],
