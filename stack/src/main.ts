@@ -48,7 +48,7 @@ getCallerAccount().then(async account => {
    * Stack for service in VPC (dev stage)
    * TODO: move values below to SSM
    */
-  return new FargateServiceStack(app, 'demoservice-service', {
+  return new FargateServiceStack(app, 'demoservice--dev', {
     certId,
     domain,
     dnsPrefix: 'demoservice-dev',

@@ -108,7 +108,7 @@ export default class BuildStack extends cdk.Stack {
 
   private addPipeline(imageRepo: ecr.Repository): CodePipeline.Pipeline {
     const pipeline = new CodePipeline.Pipeline(this, 'DemoservicePipeline', {
-      pipelineName: 'DemoService',
+      pipelineName: 'DemoServiceMaster',
       restartExecutionOnUpdate: true,
     })
 
@@ -164,10 +164,10 @@ export default class BuildStack extends cdk.Stack {
         version: '0.2',
         phases: {
           install: {
-            commands: ['echo $IMAGE_URI', 'cd cdk', 'npm install'],
+            commands: ['echo $IMAGE_URI', 'cd stack/cdk', 'npm ci'],
           },
           build: {
-            commands: ['npm run build', 'npm run cdk synth demoservice-service -- -o .'],
+            commands: ['npm run build', 'npm run cdk synth demoservice-dev -- -o .'],
           },
         },
         artifacts: {

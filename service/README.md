@@ -29,7 +29,7 @@ Simple test express server:
 
 ```bash
 ORDERS_AUTH_ENDPOINT=https://auth.nod15c.com/oauth2/token
-ORDERS_API_ENDPOINT=https://dev-api.nod15c.com/orders
+ORDERS_API_ENDPOINT=https://api-dev.nod15c.com/orders
 ```
 
 1.  There are also some global account dependencies for CDK (codebuild token, log group exists etc.)

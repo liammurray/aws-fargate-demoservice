@@ -87,7 +87,7 @@ class OrdersClientGetter {
     // We therefore pass the 'Authorization' header value as as apiKey
     const accessToken = await this.tokenGetter.get()
     const authHeader = `Bearer ${accessToken}`
-    const basePath = envStr('ORDERS_API_ENDPOINT') || 'https://dev-api.nod15c.com/orders'
+    const basePath = envStr('ORDERS_API_ENDPOINT') || 'https://api-dev.nod15c.com/orders'
     return new OrdersApi.DefaultApi({ apiKey: authHeader }, basePath)
   }
 
