@@ -69,7 +69,7 @@ export default class BuildStack extends cdk.Stack {
     })
 
     const buildProject = new CodeBuild.Project(this, 'DemoService', {
-      projectName: 'DemoServiceMaster',
+      projectName: 'DemoServiceMasterBuildImage',
       description: 'Builds DemoService image and pushes to ECR',
       source,
       environment: {
@@ -173,7 +173,7 @@ export default class BuildStack extends cdk.Stack {
     //
     const buildDeployDevStackProject = new CodeBuild.PipelineProject(this, 'CdkBuildProject', {
       projectName: 'DemoServiceMasterCdkSynth',
-      description: 'Runs CDK commands to generate cfn templates for deploy',
+      description: 'Runs CDK commands to generate deploy template',
       environment: {
         buildImage: CodeBuild.LinuxBuildImage.STANDARD_4_0,
       },
