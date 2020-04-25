@@ -104,18 +104,7 @@ export default class BuildStack extends cdk.Stack {
 
     imageRepo.grantPullPush(buildProject)
 
-    const ssmResources = ['demoservice', 'common'].map(
-      p => `arn:aws:ssm:${this.region}:${this.account}:parameter/cicd/${p}/*`
-    )
-
-    // Allow build to read SSM parameter
-    buildProject.addToRolePolicy(
-      new iam.PolicyStatement({
-        effect: iam.Effect.ALLOW,
-        actions: ['ssm:GetParameters'],
-        resources: ssmResources,
-      })
-    )
+    this.giveSsmParamAccess(buildProject)
 
     this.addDeployPipeline(imageRepo, srcRepo, owner, oauthToken)
   }
@@ -193,6 +182,8 @@ export default class BuildStack extends cdk.Stack {
         },
       }),
     })
+
+    this.giveSsmParamAccess(buildDeployDevStackProject)
 
     const actionBuild = new CodePipelineActions.CodeBuildAction({
       actionName: 'CdkDeployTemplateBuild',
@@ -282,5 +273,18 @@ export default class BuildStack extends cdk.Stack {
     repository.addLifecycleRule(maxCountRule)
 
     return repository
+  }
+
+  private giveSsmParamAccess(project: CodeBuild.PipelineProject): void {
+    const ssmResources = ['demoservice', 'common'].map(
+      p => `arn:aws:ssm:${this.region}:${this.account}:parameter/cicd/${p}/*`
+    )
+    project.addToRolePolicy(
+      new iam.PolicyStatement({
+        effect: iam.Effect.ALLOW,
+        actions: ['ssm:GetParameters'],
+        resources: ssmResources,
+      })
+    )
   }
 }
