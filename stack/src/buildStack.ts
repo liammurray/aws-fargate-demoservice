@@ -104,14 +104,16 @@ export default class BuildStack extends cdk.Stack {
 
     imageRepo.grantPullPush(buildProject)
 
-    const ssmPath = `arn:aws:ssm:${this.region}:${this.account}:parameter/cicd/demoservice/*`
+    const ssmResources = ['demoservice', 'common'].map(
+      p => `arn:aws:ssm:${this.region}:${this.account}:parameter/cicd/${p}/*`
+    )
 
     // Allow build to read SSM parameter
     buildProject.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
         actions: ['ssm:GetParameters'],
-        resources: [ssmPath],
+        resources: ssmResources,
       })
     )
 
@@ -142,7 +144,7 @@ export default class BuildStack extends cdk.Stack {
     })
 
     // GitHub (no webhook)
-    // For CDK synth
+    // For CDK synth (CODEBUILD_SRC_DIR_src)
     const srcOutput = new CodePipeline.Artifact('src')
     const gitHubSourceAction = new CodePipelineActions.GitHubSourceAction({
       actionName: 'Code',
@@ -179,7 +181,7 @@ export default class BuildStack extends cdk.Stack {
         version: '0.2',
         phases: {
           install: {
-            commands: ['echo $IMAGE_URI', 'cd $CODEBUILD_SRC_DIR_code/stack', 'npm ci'],
+            commands: ['echo $IMAGE_URI', 'cd $CODEBUILD_SRC_DIR_src/stack', 'npm ci'],
           },
           build: {
             commands: ['npm run build', 'npm run cdk synth demoservice-dev -- -o .'],
