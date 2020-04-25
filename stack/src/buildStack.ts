@@ -275,14 +275,19 @@ export default class BuildStack extends cdk.Stack {
     return repository
   }
 
-  private giveSsmParamAccess(project: CodeBuild.PipelineProject): void {
+  private giveSsmParamAccess(project: CodeBuild.Project): void {
     const ssmResources = ['demoservice', 'common'].map(
       p => `arn:aws:ssm:${this.region}:${this.account}:parameter/cicd/${p}/*`
     )
     project.addToRolePolicy(
       new iam.PolicyStatement({
         effect: iam.Effect.ALLOW,
-        actions: ['ssm:GetParameters'],
+        actions: [
+          'ssm:GetParameters',
+          'ssm:GetParameter',
+          'ssm:DescribeParamters',
+          'ssm:GetParameterHistory',
+        ],
         resources: ssmResources,
       })
     )
