@@ -173,7 +173,7 @@ export default class BuildStack extends cdk.Stack {
             commands: ['echo $IMAGE_URI', 'cd $CODEBUILD_SRC_DIR_src/stack', 'npm ci'],
           },
           build: {
-            commands: ['npm run build', 'npm run cdk synth demoservice-dev -- -o .'],
+            commands: ['npm run build', 'npm run cdk synth demoservice-dev'],
           },
         },
         artifacts: {
