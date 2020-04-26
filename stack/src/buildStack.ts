@@ -177,7 +177,7 @@ export default class BuildStack extends cdk.Stack {
           },
         },
         artifacts: {
-          'base-directory': 'cdk.out',
+          'base-directory': '$CODEBUILD_SRC_DIR_src/stack/cdk.out',
           files: deployTemplate,
         },
       }),
