@@ -18,9 +18,9 @@ The service makes API calls to a [simple orders API](https://github.com/liammurr
 
 ## Quickstart
 
-[Deploy](./stack/README.md)
+[Deploy](./infra/README.md)
 
-[Develop](./stack/README.md)
+[Develop](./infra/README.md)
 
 ## TODO
 
