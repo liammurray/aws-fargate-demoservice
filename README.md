@@ -20,7 +20,7 @@ The service makes API calls to a [simple orders API](https://github.com/liammurr
 
 [Deploy](./infra/README.md)
 
-[Develop](./infra/README.md)
+[Develop](./service/README.md)
 
 ## TODO
 

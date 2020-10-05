@@ -111,6 +111,7 @@ export default class BuildStack extends cdk.Stack {
 
   /**
    * Adds deployment pipepline
+   *   Triggered by ECR push to repository
    */
   private addDeployPipeline(
     imageRepo: ecr.Repository,
@@ -162,7 +163,7 @@ export default class BuildStack extends cdk.Stack {
     //
     const buildDeployDevStackProject = new CodeBuild.PipelineProject(this, 'CdkBuildProject', {
       projectName: 'DemoServiceMasterCdkSynth',
-      description: 'Runs CDK commands to generate deploy template',
+      description: 'Build, test and package to create deploy template',
       environment: {
         buildImage: CodeBuild.LinuxBuildImage.STANDARD_4_0,
       },

@@ -58,9 +58,11 @@ make develop
 
 ## Test commands
 
+Port may need updating (see output from make develop)
+
 ```bash
-curl -sk localhost:3000/v1/orders/1 | jq
-curl -sk localhost:3000/v1/healthcheck | jq
+curl -sk localhost:3005/v1/orders/1 | jq
+curl -sk localhost:3005/v1/healthcheck | jq
 ```
 
 See `stack` directory for hitting live endpoints. Looks like:

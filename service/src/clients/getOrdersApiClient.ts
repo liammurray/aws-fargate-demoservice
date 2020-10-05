@@ -30,7 +30,7 @@ class TokenGetter {
     }
     await this.fetch()
     if (!this.accessToken) {
-      throw new Error('Whoops')
+      throw new Error('Failed to fetch access token')
     }
     return this.accessToken
   }
@@ -56,17 +56,24 @@ class TokenGetter {
       },
     }
     const strip = { ...config }
-    delete strip.auth
+    //delete strip.auth
     ctx.logger.info('Fetching access token', strip)
-    const res = await axios.post(this.opts.endpoint, form, config)
-    const body = res.data
-    this.accessToken = body.access_token
-    const MS_30SECS = 30 * 1000
-    this.expirationEpoch = Date.now() + body.expires_in * 1000 - MS_30SECS
+    try {
+      const res = await axios.post(this.opts.endpoint, form, config)
+
+      const body = res.data
+      this.accessToken = body.access_token
+      const MS_30SECS = 30 * 1000
+      this.expirationEpoch = Date.now() + body.expires_in * 1000 - MS_30SECS
+    } catch (e) {
+      // Can occur if ssm has old values for app client creds for FullUser (see below)
+      ctx.logger.info('Error fetching access token (are you using correct app client creds?) ', e)
+    }
   }
 }
 
 async function createTokenGetter(): Promise<TokenGetter> {
+  // param-put-secure-string /api/clientcreds/FullUser <client-id>:<secret>
   const path = '/api/clientcreds/FullUser'
   ctx.logger.info(`Fetching client credentials from SSM for ${path}`)
   const val = await getSecureParam(createSSM(), path)

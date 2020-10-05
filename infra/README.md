@@ -2,7 +2,7 @@
 
 ## Dependencies
 
-Account global stack should be created first. (Creates common services log group and sets up codebuild token for account.)
+Account global infra should be created first. (Creates common services log group and sets up codebuild token for account.)
 
 SSM params and SystemManager secrets (see paths in CDK code in main.ts)
 
