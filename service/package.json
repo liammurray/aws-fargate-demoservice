@@ -31,7 +31,7 @@
     "aws-xray-sdk": "^3.2.0",
     "aws-xray-sdk-core": "^3.2.0",
     "aws-xray-sdk-express": "^3.2.0",
-    "axios": "^0.20.0",
+    "axios": "^0.21.1",
     "body-parser": "^1.19.0",
     "cls-hooked": "^4.2.2",
     "dotenv": "^8.2.0",
