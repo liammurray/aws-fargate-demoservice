@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@liammurray/orders-client-axios": "^1.0.5",
-    "aws-sdk": "^2.766.0",
+    "aws-sdk": "^2.814.0",
     "aws-xray-sdk": "^3.2.0",
     "aws-xray-sdk-core": "^3.2.0",
     "aws-xray-sdk-express": "^3.2.0",
